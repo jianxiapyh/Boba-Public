@@ -73,6 +73,15 @@ def build_parser():
     parser.add_argument("--save_batch_grid", action="store_true")
     parser.add_argument("--display_batch_grid", action="store_true")
     parser.add_argument(
+        "--cycle_controller_trajectories",
+        "--cycle-controller-trajectories",
+        action="store_true",
+        help=(
+            "Cycle the available multi_ctrls.pkl trajectories with instance_index %% "
+            "trajectory_count when batch size exceeds the trajectory bank."
+        ),
+    )
+    parser.add_argument(
         "--batch_image_resolution",
         choices=("native", "640x480"),
         default="native",
@@ -372,6 +381,7 @@ def main():
             batch_grid_cols=args.batch_grid_cols,
             profile_render_components=args.profile_render_components,
             sim_force_mode=args.sim_force_mode,
+            cycle_controller_trajectories=args.cycle_controller_trajectories,
         )
 
         if args.save_video:

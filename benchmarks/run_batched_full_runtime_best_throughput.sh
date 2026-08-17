@@ -24,6 +24,7 @@ GAUSSIAN_RENDER_MODE="${GAUSSIAN_RENDER_MODE:-shared_template}"
 BATCHED_RENDER_VARIANT="${BATCHED_RENDER_VARIANT-batch_prune}"
 SIM_FORCE_MODE="${SIM_FORCE_MODE:-gather}"
 NUM_VIEWS="${NUM_VIEWS:-1}"
+CYCLE_CONTROLLER_TRAJECTORIES="${CYCLE_CONTROLLER_TRAJECTORIES:-0}"
 
 read_cases_file() {
   mapfile -t cases < <(awk -F, 'NF {gsub(/^[ \t]+|[ \t]+$/, "", $1); if ($1 != "") print $1}' "$1")
@@ -86,7 +87,7 @@ Deprecated aliases are accepted with a warning:
   optimized_pruned -> batch_prune
 
 Search policy:
-  1. Try powers of two from MIN_BATCH_SIZE to MAX_BATCH_SIZE.
+  1. Try MIN_BATCH_SIZE, then double it up to MAX_BATCH_SIZE.
   2. Stop power-of-two expansion for a case after a batch size has zero successful runs.
   3. Sample and zoom around the best successful power-of-two batch.
   4. Densely refine only a small final window around the best sampled batch.
@@ -113,6 +114,9 @@ Environment overrides:
   BATCH_IMAGE_RESOLUTION default: 640x480
   BATCHED_RENDER_VARIANT default: batch_prune
   SIM_FORCE_MODE        default: gather
+  CYCLE_CONTROLLER_TRAJECTORIES
+                        0 or 1 (default: 0). When enabled, batches larger
+                        than multi_ctrls.pkl cycle trajectories by modulo.
 
 Output layout:
   Default outputs are grouped by simulation/render config, e.g.:
@@ -143,6 +147,9 @@ mode_dir_for_current_config() {
   if [[ "$SIM_FORCE_MODE" != "gather" ]]; then
     mode_dir="${mode_dir}_sim_${SIM_FORCE_MODE}"
   fi
+  if ((CYCLE_CONTROLLER_TRAJECTORIES == 1)); then
+    mode_dir="${mode_dir}_cyclic_controller_trajectories"
+  fi
   printf "%s\n" "$mode_dir"
 }
 
@@ -156,7 +163,11 @@ config_dir_for_current_config() {
   else
     render_config="${RENDER_MODE}_${GAUSSIAN_RENDER_MODE}"
   fi
-  printf "sim_%s_render_%s\n" "$SIM_FORCE_MODE" "$render_config"
+  local config_dir="sim_${SIM_FORCE_MODE}_render_${render_config}"
+  if ((CYCLE_CONTROLLER_TRAJECTORIES == 1)); then
+    config_dir="${config_dir}_cyclic_controller_trajectories"
+  fi
+  printf "%s\n" "$config_dir"
 }
 
 find_best_batch() {
@@ -322,6 +333,9 @@ run_candidate() {
     if [[ -n "$BATCHED_RENDER_VARIANT" ]]; then
       cmd+=(--batched_render_variant "$BATCHED_RENDER_VARIANT")
     fi
+    if ((CYCLE_CONTROLLER_TRAJECTORIES == 1)); then
+      cmd+=(--cycle_controller_trajectories)
+    fi
 
     echo "=== [full_runtime_best_throughput] ${run_name} :: batch=${batch_size} :: ${case_name} ==="
     if "${cmd[@]}" >"$log_path" 2>&1; then
@@ -435,6 +449,10 @@ validate_positive_integer "REFINE_SAMPLES" "$REFINE_SAMPLES"
 validate_positive_integer "REFINE_ROUNDS" "$REFINE_ROUNDS"
 validate_positive_integer "FINAL_DENSE_WINDOW" "$FINAL_DENSE_WINDOW"
 validate_positive_integer "NUM_VIEWS" "$NUM_VIEWS"
+if [[ "$CYCLE_CONTROLLER_TRAJECTORIES" != "0" && "$CYCLE_CONTROLLER_TRAJECTORIES" != "1" ]]; then
+  echo "[ERROR] CYCLE_CONTROLLER_TRAJECTORIES must be 0 or 1. Received: ${CYCLE_CONTROLLER_TRAJECTORIES}" >&2
+  exit 1
+fi
 if ! validate_sim_force_mode "$SIM_FORCE_MODE"; then
   exit 1
 fi
@@ -518,10 +536,7 @@ for case_name in "${cases[@]}"; do
   power_batches=()
   LAST_SUCCESSFUL_RUNS=0
 
-  batch_size=1
-  while ((batch_size < SEARCH_MIN_BATCH_SIZE)); do
-    batch_size=$((batch_size * 2))
-  done
+  batch_size="$SEARCH_MIN_BATCH_SIZE"
 
   while ((batch_size <= MAX_BATCH_SIZE)); do
     run_candidate_if_needed "$case_name" "$batch_size"
@@ -637,6 +652,9 @@ aggregate_cmd=(
 )
 if [[ -n "$BATCHED_RENDER_VARIANT" ]]; then
   aggregate_cmd+=(--batched_render_variant "$BATCHED_RENDER_VARIANT")
+fi
+if ((CYCLE_CONTROLLER_TRAJECTORIES == 1)); then
+  aggregate_cmd+=(--cycle_controller_trajectories)
 fi
 
 "${aggregate_cmd[@]}" "${cases[@]}"

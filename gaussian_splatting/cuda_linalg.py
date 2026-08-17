@@ -44,8 +44,8 @@ def validate_cuda_compatibility(
         raise RuntimeError(
             "Boba requires a CUDA-enabled PyTorch build with a parseable "
             f"torch.version.cuda value; found {cuda_build!r}. Use the supported "
-            "phystwin environment, or phystwin-cu130 for the CUDA 13 "
-            "compatibility path."
+            "recommended phystwin-cu132 environment, phystwin-cu130 for "
+            "CUDA 13.0 reproduction, or legacy phystwin environment."
         )
     if (
         capability[0] >= 12
@@ -55,8 +55,10 @@ def validate_cuda_compatibility(
             f"CUDA device capability {capability[0]}.{capability[1]} requires "
             "a PyTorch build against CUDA 13 or newer for Boba's cuSOLVER "
             f"runtime; found torch.version.cuda={cuda_build!r}. Use the "
-            "phystwin-cu130 environment. The CUDA version shown by nvidia-smi "
-            "is driver capability, not the CUDA version used to build PyTorch."
+            "recommended phystwin-cu132 environment. The phystwin-cu130 "
+            "environment is retained for CUDA 13.0 reproduction. The CUDA "
+            "version shown by nvidia-smi is driver capability, not the CUDA "
+            "version used to build PyTorch."
         )
     return capability
 

@@ -12,6 +12,14 @@ class RuntimeVisualizationCliTests(unittest.TestCase):
     def test_display_batch_grid_defaults_off(self):
         self.assertFalse(self.parse().display_batch_grid)
 
+    def test_cycle_controller_trajectories_defaults_off(self):
+        self.assertFalse(self.parse().cycle_controller_trajectories)
+
+    def test_cycle_controller_trajectories_can_be_enabled(self):
+        args = self.parse("--cycle-controller-trajectories")
+        validate_args(args)
+        self.assertTrue(args.cycle_controller_trajectories)
+
     def test_display_batch_grid_is_valid_for_batch_images(self):
         args = self.parse("--display_batch_grid")
         validate_args(args)

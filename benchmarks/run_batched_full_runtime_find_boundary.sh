@@ -15,6 +15,7 @@ RETRIES="${RETRIES:-${NUM_RUNS:-1}}"
 MIN_SUCCESSES="${MIN_SUCCESSES:-$RETRIES}"
 TIMEOUT_SEC="${TIMEOUT_SEC:-0}"
 SIM_FORCE_MODE="${SIM_FORCE_MODE:-gather}"
+CYCLE_CONTROLLER_TRAJECTORIES="${CYCLE_CONTROLLER_TRAJECTORIES:-0}"
 BATCHED_RENDER_VARIANT_DEFAULT="${BATCHED_RENDER_VARIANT-batch_prune}"
 BATCH_IMAGE_RESOLUTION_DEFAULT="${BATCH_IMAGE_RESOLUTION-640x480}"
 OUT_CSV_WAS_SET=0
@@ -124,6 +125,9 @@ Environment overrides:
                                to count as supported. Defaults to RETRIES.
   TIMEOUT_SEC                  0 disables timeout.
   SIM_FORCE_MODE               default: gather.
+  CYCLE_CONTROLLER_TRAJECTORIES
+                               0 or 1 (default: 0). When enabled, batches larger
+                               than multi_ctrls.pkl cycle trajectories by modulo.
   BATCHED_RENDER_VARIANT       default: batch_prune.
   BATCH_IMAGE_RESOLUTION       default: 640x480.
   OUT_CSV                      default: results/batched_full_runtime_boundary/<config>/boundary.csv.
@@ -206,7 +210,11 @@ config_dir_for_current_config() {
       render_config="${render_config}_${batched_render_variant}"
     fi
   fi
-  printf "sim_%s_render_%s\n" "$SIM_FORCE_MODE" "$render_config"
+  local config_dir="sim_${SIM_FORCE_MODE}_render_${render_config}"
+  if ((CYCLE_CONTROLLER_TRAJECTORIES == 1)); then
+    config_dir="${config_dir}_cyclic_controller_trajectories"
+  fi
+  printf "%s\n" "$config_dir"
 }
 
 render_mode="batch_images"
@@ -457,6 +465,11 @@ for value_name in BASE_BATCH_SIZE GROWTH_NUM GROWTH_DEN MAX_BATCH_SIZE RETRIES M
   fi
 done
 
+if [[ "$CYCLE_CONTROLLER_TRAJECTORIES" != "0" && "$CYCLE_CONTROLLER_TRAJECTORIES" != "1" ]]; then
+  echo "Error: CYCLE_CONTROLLER_TRAJECTORIES must be 0 or 1. Received: ${CYCLE_CONTROLLER_TRAJECTORIES}" >&2
+  exit 1
+fi
+
 if ((BASE_BATCH_SIZE < 1)); then
   echo "Error: BASE_BATCH_SIZE must be positive. Received: ${BASE_BATCH_SIZE}" >&2
   exit 1
@@ -512,6 +525,9 @@ if [[ -n "$batched_render_variant" ]]; then
 fi
 if [[ "$SIM_FORCE_MODE" != "gather" ]]; then
   mode_dir="${mode_dir}_sim_${SIM_FORCE_MODE}"
+fi
+if ((CYCLE_CONTROLLER_TRAJECTORIES == 1)); then
+  mode_dir="${mode_dir}_cyclic_controller_trajectories"
 fi
 
 CONFIG_DIR="$(config_dir_for_current_config)"
@@ -644,6 +660,9 @@ run_candidate_uncached() {
     if [[ -n "$batched_render_variant" ]]; then
       cmd+=(--batched_render_variant "$batched_render_variant")
       cmd+=(--pruned_gaussian_path "$PRUNED_GAUSSIAN_PATH")
+    fi
+    if ((CYCLE_CONTROLLER_TRAJECTORIES == 1)); then
+      cmd+=(--cycle_controller_trajectories)
     fi
 
     local rc

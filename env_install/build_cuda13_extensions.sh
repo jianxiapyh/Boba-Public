@@ -1,17 +1,40 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-EXPECTED_ENV="phystwin-cu130"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ACTIVE_PREFIX="${CONDA_PREFIX:-}"
 RUNTIME_HOOK_ROOT="${REPO_ROOT}/env_install/conda"
+
+ACTIVE_ENV_NAME=""
+if [[ -n "${ACTIVE_PREFIX}" ]]; then
+  ACTIVE_ENV_NAME="$(basename "${ACTIVE_PREFIX}")"
+fi
+case "${ACTIVE_ENV_NAME}" in
+  phystwin-cu130)
+    DEFAULT_EXPECTED_ENV="phystwin-cu130"
+    DEFAULT_TORCH_VERSION="2.10.0+cu130"
+    DEFAULT_TORCH_CUDA="13.0"
+    DEFAULT_CACHE_TAG="cu130"
+    ;;
+  *)
+    DEFAULT_EXPECTED_ENV="phystwin-cu132"
+    DEFAULT_TORCH_VERSION="2.12.1+cu132"
+    DEFAULT_TORCH_CUDA="13.2"
+    DEFAULT_CACHE_TAG="cu132"
+    ;;
+esac
+
+EXPECTED_ENV="${BOBA_CUDA_ENV_NAME:-${DEFAULT_EXPECTED_ENV}}"
+EXPECTED_TORCH_VERSION="${BOBA_TORCH_VERSION:-${DEFAULT_TORCH_VERSION}}"
+EXPECTED_TORCH_CUDA="${BOBA_TORCH_CUDA:-${DEFAULT_TORCH_CUDA}}"
+CACHE_TAG="${BOBA_CUDA_CACHE_TAG:-${DEFAULT_CACHE_TAG}}"
 
 if [[ -z "${ACTIVE_PREFIX}" || "$(basename "${ACTIVE_PREFIX}")" != "${EXPECTED_ENV}" ]]; then
   echo "Activate ${EXPECTED_ENV} before rebuilding CUDA extensions." >&2
   exit 2
 fi
 if [[ ! -f "${ACTIVE_PREFIX}/include/GL/gl.h" ]]; then
-  echo "Missing GL/gl.h; update ${EXPECTED_ENV} from env_install/phystwin-cu130.yml." >&2
+  echo "Missing GL/gl.h; update ${EXPECTED_ENV} from env_install/${EXPECTED_ENV}.yml." >&2
   exit 3
 fi
 
@@ -24,13 +47,13 @@ ACTIVE_SITE_PACKAGES="$("${ACTIVE_PREFIX}/bin/python" -c \
 export LD_LIBRARY_PATH="${ACTIVE_SITE_PACKAGES}/nvidia/cu13/lib:${ACTIVE_SITE_PACKAGES}/torch/lib:${ACTIVE_PREFIX}/lib:${ACTIVE_PREFIX}/targets/x86_64-linux/lib"
 export TORCH_CUDA_ARCH_LIST="$(python "${REPO_ROOT}/env_install/cuda_arch.py")"
 export MAX_JOBS="${MAX_JOBS:-2}"
-export TORCH_EXTENSIONS_DIR="${ACTIVE_PREFIX}/var/cache/torch_extensions-boba-cu130"
-export WARP_CACHE_PATH="${ACTIVE_PREFIX}/var/cache/warp-boba-cu130"
+export TORCH_EXTENSIONS_DIR="${ACTIVE_PREFIX}/var/cache/torch_extensions-boba-${CACHE_TAG}"
+export WARP_CACHE_PATH="${ACTIVE_PREFIX}/var/cache/warp-boba-${CACHE_TAG}"
 
 mkdir -p "${TORCH_EXTENSIONS_DIR}" "${WARP_CACHE_PATH}"
 echo "CUDA extension architectures: ${TORCH_CUDA_ARCH_LIST}"
 
-python - <<'PY'
+python - "${EXPECTED_TORCH_VERSION}" "${EXPECTED_TORCH_CUDA}" <<'PY'
 import importlib.metadata
 import os
 import sys
@@ -38,9 +61,11 @@ import sys
 import torch
 from torch.utils.cpp_extension import CUDA_HOME
 
-if torch.__version__ != "2.10.0+cu130" or torch.version.cuda != "13.0":
+expected_torch_version = sys.argv[1]
+expected_torch_cuda = sys.argv[2]
+if torch.__version__ != expected_torch_version or torch.version.cuda != expected_torch_cuda:
     raise SystemExit(
-        f"Expected torch 2.10.0+cu130 / CUDA 13.0, found "
+        f"Expected torch {expected_torch_version} / CUDA {expected_torch_cuda}, found "
         f"{torch.__version__} / {torch.version.cuda}"
     )
 if os.path.realpath(CUDA_HOME or "") != os.path.realpath(sys.prefix):

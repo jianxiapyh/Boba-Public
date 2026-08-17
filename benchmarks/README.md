@@ -87,6 +87,9 @@ Environment overrides:
 - `BATCH_IMAGE_RESOLUTION`: batch-image resolution (default: `640x480`).
 - `BATCHED_RENDER_VARIANT`: render variant (default: `batch_prune`).
 - `SIM_FORCE_MODE`: simulation force path (default: `gather`).
+- `CYCLE_CONTROLLER_TRAJECTORIES`: set to `1` to reuse the available
+  `multi_ctrls.pkl` trajectories as `instance_index % trajectory_count` when
+  testing a batch larger than the trajectory bank (default: `0`, strict).
 - `NUM_VIEWS`: camera views passed to the case runner (default: `1`).
 
 Output location: config-aware by default.
@@ -164,6 +167,9 @@ Environment overrides:
   (default: `RETRIES`).
 - `TIMEOUT_SEC`: timeout per attempt; `0` disables timeout (default: `0`).
 - `SIM_FORCE_MODE`: simulation force path (default: `gather`).
+- `CYCLE_CONTROLLER_TRAJECTORIES`: set to `1` to reuse the available
+  `multi_ctrls.pkl` trajectories as `instance_index % trajectory_count` when
+  measuring capacity beyond the trajectory bank (default: `0`, strict).
 - `BATCHED_RENDER_VARIANT`: render variant (default: `batch_prune`).
 - `BATCH_IMAGE_RESOLUTION`: batch-image resolution (default: `640x480`).
 - `OUT_CSV`: output CSV. If set, used exactly as provided

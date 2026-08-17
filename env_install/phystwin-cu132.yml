@@ -1,21 +1,20 @@
-# Retained for reproducing the earlier CUDA 13.0 benchmark environment.
-name: phystwin-cu130
+# Recommended Boba environment for new installations.
+name: phystwin-cu132
 channels:
   - nvidia
   - defaults
 dependencies:
   - python=3.10.20
   - pip=26.1.2
-  - cuda-toolkit=13.0.0
-  - cuda-compiler=13.0.0
+  - cuda-toolkit=13.2.0
+  - cuda-compiler=13.2.0
   - gcc_linux-64=14.3.0
   - gxx_linux-64=14.3.0
   - libgl-devel=1.7.0
   - pip:
-      - --extra-index-url https://download.pytorch.org/whl/cu130
-      - torch==2.10.0+cu130
-      - torchvision==0.25.0+cu130
-      - torchaudio==2.10.0+cu130
+      - --extra-index-url https://download.pytorch.org/whl/cu132
+      - torch==2.12.1+cu132
+      - torchvision==0.27.1+cu132
       - numpy==1.26.4
       - scipy==1.15.3
       - PyYAML==6.0.3

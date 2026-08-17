@@ -810,6 +810,7 @@ class InvPhyTrainerWarp:
         gs_path,
         n_dup=0,
         instance_offsets=None,
+        cycle_controller_trajectories=False,
         gaussian_render_mode="shared_template",
         force_shared_batched_gaussians=False,
         sim_force_mode=SIM_FORCE_MODE_GATHER,
@@ -842,14 +843,27 @@ class InvPhyTrainerWarp:
         n_vert_single_ctrl = ctrl_init_vertices.shape[0]
         frame_len = int(self.dataset.frame_len)
         controller_points_group = None
+        available_controller_trajectories = None
         batch_size = n_dup + 1
         if n_dup > 0:
             controller_points_group = self._ensure_controller_points_group_loaded()
             required_instances = batch_size
-            if self.num_input_trajectories < required_instances:
+            available_controller_trajectories = int(self.num_input_trajectories)
+            if (
+                available_controller_trajectories < required_instances
+                and not cycle_controller_trajectories
+            ):
                 raise ValueError(
                     "multi_ctrls.pkl does not contain enough trajectories for the requested "
-                    f"batch size {required_instances}. Found {self.num_input_trajectories}."
+                    f"batch size {required_instances}. Found "
+                    f"{available_controller_trajectories}."
+                )
+            if available_controller_trajectories < required_instances:
+                print(
+                    "[BatchedRender] Cycling controller trajectories: "
+                    f"requested={required_instances}, "
+                    f"available={available_controller_trajectories}, "
+                    "trajectory_index=instance_index % available"
                 )
             frame_len = self.multi_frame_len
 
@@ -889,7 +903,10 @@ class InvPhyTrainerWarp:
             shift = resolved_instance_offsets[dup_i]
             ctrl_v = ctrl_init_vertices + shift
             if n_dup > 0:
-                new_controller_points = controller_points_group[dup_i] + shift
+                trajectory_index = dup_i
+                if cycle_controller_trajectories:
+                    trajectory_index %= available_controller_trajectories
+                new_controller_points = controller_points_group[trajectory_index] + shift
             else:
                 new_controller_points = self.controller_points
             out_init_vertices.append(ctrl_v)
@@ -1583,6 +1600,7 @@ class InvPhyTrainerWarp:
         batch_grid_cols=None,
         profile_render_components=False,
         sim_force_mode=SIM_FORCE_MODE_GATHER,
+        cycle_controller_trajectories=False,
     ):
         gaussian_render_mode = normalize_gaussian_render_mode(gaussian_render_mode)
         if sim_force_mode not in SIM_FORCE_MODES:
@@ -1626,6 +1644,8 @@ class InvPhyTrainerWarp:
 
         print(f"[BatchedRender] gaussian_render_mode={gaussian_render_mode}")
         print(f"[BatchedRender] sim_force_mode={sim_force_mode}")
+        if cycle_controller_trajectories:
+            print("[BatchedRender] controller_trajectory_policy=cyclic")
         if batch_size == 1:
             print("[BatchedRender] single-instance/no-offset/no-camera-change")
         elif render_mode == "batch_images":
@@ -1646,6 +1666,7 @@ class InvPhyTrainerWarp:
             model_path,
             gs_path,
             n_dup=batch_size - 1,
+            cycle_controller_trajectories=cycle_controller_trajectories,
             gaussian_render_mode=gaussian_render_mode,
             force_shared_batched_gaussians=(render_mode == "batch_images"),
             sim_force_mode=sim_force_mode,

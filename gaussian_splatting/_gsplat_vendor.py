@@ -6,8 +6,8 @@ import sys
 from pathlib import Path
 
 
-EXPECTED_CONDA_ENV = "phystwin"
-SUPPORTED_CONDA_ENVS = {"phystwin", "phystwin-cu130"}
+EXPECTED_CONDA_ENV = "phystwin-cu132"
+SUPPORTED_CONDA_ENVS = {"phystwin", "phystwin-cu130", "phystwin-cu132"}
 REPO_ROOT = Path(__file__).resolve().parents[1]
 VENDORED_GSPLAT_ROOT = Path(__file__).resolve().parent / "submodules" / "gsplat"
 VENDORED_GSPLAT_PACKAGE = VENDORED_GSPLAT_ROOT / "gsplat"
@@ -16,7 +16,8 @@ VENDORED_GSPLAT_PACKAGE = VENDORED_GSPLAT_ROOT / "gsplat"
 def _install_hint() -> str:
     return (
         f"From the repository root ({REPO_ROOT}), install the vendored gsplat:\n"
-        "  phystwin-cu130: ./env_install/build_cuda13_extensions.sh\n"
+        "  phystwin-cu132 / phystwin-cu130: "
+        "./env_install/build_cuda13_extensions.sh\n"
         "  phystwin: conda run -n phystwin env PYTHONNOUSERSITE=1 "
         "BUILD_NO_CUDA=1 python -m pip install -e "
         "./gaussian_splatting/submodules/gsplat"

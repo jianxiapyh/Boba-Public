@@ -172,6 +172,7 @@ def mode_dir(
     batch_image_resolution,
     batched_render_variant=None,
     sim_force_mode=SIM_FORCE_MODE_GATHER,
+    cycle_controller_trajectories=False,
 ):
     if gaussian_render_mode not in GAUSSIAN_RENDER_MODES:
         raise ValueError(
@@ -187,6 +188,8 @@ def mode_dir(
             selected = f"{selected}_{batched_render_variant}"
         if sim_force_mode != SIM_FORCE_MODE_GATHER:
             selected = f"{selected}_sim_{sim_force_mode}"
+        if cycle_controller_trajectories:
+            selected = f"{selected}_cyclic_controller_trajectories"
         return selected
     if render_mode == "batch_images":
         if instance_id is not None:
@@ -206,6 +209,8 @@ def mode_dir(
             selected = f"{selected}_{batched_render_variant}"
         if sim_force_mode != SIM_FORCE_MODE_GATHER:
             selected = f"{selected}_sim_{sim_force_mode}"
+        if cycle_controller_trajectories:
+            selected = f"{selected}_cyclic_controller_trajectories"
         return selected
 
     raise ValueError(
@@ -467,6 +472,12 @@ def main():
         default=SIM_FORCE_MODE_GATHER,
     )
     parser.add_argument(
+        "--cycle_controller_trajectories",
+        "--cycle-controller-trajectories",
+        action="store_true",
+        help="Read summaries from runs that cycle controller trajectories by modulo.",
+    )
+    parser.add_argument(
         "--output_best",
         default="results/batched_full_runtime_autotune/best_throughput_table.csv",
     )
@@ -497,6 +508,7 @@ def main():
         args.batch_image_resolution,
         args.batched_render_variant,
         args.sim_force_mode,
+        args.cycle_controller_trajectories,
     )
     attempted_batches = read_attempted_manifest(args.attempted_manifest, cases)
     if attempted_batches is None:

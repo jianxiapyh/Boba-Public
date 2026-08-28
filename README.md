@@ -165,12 +165,13 @@ when using this environment.
 
 ## Required Assets
 
-Download the required folders from the [Boba-Public assets folder](https://drive.google.com/drive/folders/19Wyi0VGDhq-J4bKLy0ljNDXQe_zjo0Uw?usp=drive_link), which is part of the [Boba assets collection](https://drive.google.com/drive/folders/12E5J3ayCmJDg8e3lKbVJmgfI8zW5yn8c?usp=drive_link), then place them at the repository root.
+Download each archive below and extract it at the repository root:
 
-- `data`
-- `gaussian_output`
-- `experiments`
-- `experiments_optimization`
+- [`data`](https://drive.google.com/file/d/1aNse_gijcxVkolD4_PLD4fxXNQfuKkK-/view?usp=drive_link)
+- [`experiments`](https://drive.google.com/file/d/1dAUMfyojdSKp2dc5aMhXNUVfTJMj7W76/view?usp=drive_link)
+- [`experiments_optimization`](https://drive.google.com/file/d/1MMRpFHpN47nhXc3nZxfWwpnnDp2ITCw5/view?usp=drive_link)
+- [`gaussian_output`](https://drive.google.com/file/d/1ZtYBj0tEGNLppcSAzt9r-oVUdSAdMHnN/view?usp=drive_link)
+- [`gaussian_output_pruned_policy_30_55`](https://drive.google.com/file/d/1nDpWimKg8hsFaXwzo7MdceGN1HQS3c02/view?usp=drive_link)
 
 Expected layout:
 
@@ -179,6 +180,7 @@ data/
 experiments/
 experiments_optimization/
 gaussian_output/
+gaussian_output_pruned_policy_30_55/
 ```
 
 ## Run Boba-Local

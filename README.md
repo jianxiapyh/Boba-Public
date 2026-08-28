@@ -35,25 +35,7 @@ This branch contains the spring-mass simulation and skinning pipeline described 
 
 ## Setup
 
-### Prerequisites
-
-- Linux on an NVIDIA GPU
-- CUDA-compatible driver and toolkit
-- Linux build tools for compiled extensions
-- Desktop OpenGL / X11 for interactive windowed runs
-- A valid `DISPLAY` when launching rendering paths
-
-On a minimal Ubuntu/NVIDIA machine, install system packages such as `build-essential`, `libglfw3`, `libglfw3-dev`, and the usual desktop OpenGL / X11 runtime libraries before continuing.
-
-For production linear algebra, Boba always selects cuSOLVER. There is no
-runtime backend-selection environment variable and no MAGMA fallback.
-
 ### Recommended CUDA 13.2 environment
-
-CUDA 13.2 is the default for new Boba installations. Together with PyTorch
-2.12.1, its cuSOLVER path removes the large-batch `torch.linalg.eigh`
-matrix-count failure observed with the CUDA 13.0 stack, allowing every case in
-the paper's 19-case capacity measurement to run until its GPU-memory boundary.
 
 ```bash
 conda env create -f env_install/phystwin-cu132.yml
@@ -69,6 +51,32 @@ environment or via:
 ```bash
 conda run -n phystwin-cu132 env PYTHONNOUSERSITE=1 python ...
 ```
+
+<details>
+<summary>Prerequisites and system requirements</summary>
+
+- Linux on an NVIDIA GPU
+- CUDA-compatible driver and toolkit
+- Linux build tools for compiled extensions
+- Desktop OpenGL / X11 for interactive windowed runs
+- A valid `DISPLAY` when launching rendering paths
+
+On a minimal Ubuntu/NVIDIA machine, install system packages such as
+`build-essential`, `libglfw3`, `libglfw3-dev`, and the usual desktop OpenGL / X11
+runtime libraries before continuing.
+
+For production linear algebra, Boba always selects cuSOLVER. There is no
+runtime backend-selection environment variable and no MAGMA fallback.
+
+</details>
+
+<details>
+<summary>CUDA 13.2 build and compatibility details</summary>
+
+CUDA 13.2 is the default for new Boba installations. Together with PyTorch
+2.12.1, its cuSOLVER path removes the large-batch `torch.linalg.eigh`
+matrix-count failure observed with the CUDA 13.0 stack, allowing every case in
+the paper's 19-case capacity measurement to run until its GPU-memory boundary.
 
 Boba validates that runtime imports resolve to its vendored `gsplat` copy. A
 system-level or user-level `gsplat` install is not a supported configuration.
@@ -112,7 +120,10 @@ name. `nvidia-smi` reports the maximum CUDA version supported by the installed
 driver, while `torch.version.cuda` reports the CUDA version used to build the
 active PyTorch package.
 
-### CUDA 13.0 reproduction environment
+</details>
+
+<details>
+<summary>CUDA 13.0 reproduction environment</summary>
 
 The previous `phystwin-cu130` environment remains available for reproducing
 the earlier CUDA 13.0 benchmark stack:
@@ -128,7 +139,10 @@ conda activate phystwin-cu130
 Because the editable `gsplat` binary is shared by the checkout, rerun the
 builder whenever switching back to `phystwin-cu132`.
 
-### Legacy CUDA 12 environment
+</details>
+
+<details>
+<summary>Legacy CUDA 12 environment</summary>
 
 The original install script targets a CUDA 12.1 desktop setup. Boba has also
 been tested on CUDA 11.8 and CUDA 12.2. Use this legacy path when the GPU or
@@ -147,14 +161,16 @@ OpenGL/GLFW/PyCUDA, the vendored `gsplat`, kornia, and the compiled KNN
 extension. Substitute `phystwin` for `phystwin-cu132` in the examples below
 when using this environment.
 
+</details>
+
 ## Required Assets
 
-Replace the placeholders below with the public download links before release, then place the downloaded folders at the repository root.
+Download the required folders from the [Boba-Public assets folder](https://drive.google.com/drive/folders/19Wyi0VGDhq-J4bKLy0ljNDXQe_zjo0Uw?usp=drive_link), which is part of the [Boba assets collection](https://drive.google.com/drive/folders/12E5J3ayCmJDg8e3lKbVJmgfI8zW5yn8c?usp=drive_link), then place them at the repository root.
 
-- [data](https://example.com/boba/data)
-- [gaussian_output](https://example.com/boba/gaussian_output)
-- [experiments](https://example.com/boba/experiments)
-- [experiments_optimization](https://example.com/boba/experiments_optimization)
+- `data`
+- `gaussian_output`
+- `experiments`
+- `experiments_optimization`
 
 Expected layout:
 
@@ -179,6 +195,9 @@ Quality mode:
 conda run -n phystwin-cu132 env PYTHONNOUSERSITE=1 python interactive_playground.py --mode quality --case_name double_lift_cloth_3
 ```
 
+<details>
+<summary>Quality evaluation and PhysTwin comparison details</summary>
+
 `quality` mode is the single-instance evaluation path with calibrated multi-view rendering.
 It writes `inference.pkl` and rendered frames under `results/quality/<case>/`.
 For quality comparison against the original PhysTwin paper numbers, use one camera view.
@@ -194,6 +213,8 @@ Render evaluation supports two `OVERALL` aggregation modes:
 
 Here, `scene` means one data sequence/case such as `double_lift_cloth_1`, and `view` means one calibrated camera view. `--num_views 2` and `--num_views 3` are Boba multi-view extensions; use `--num_views 1` for one-to-one comparison with original PhysTwin paper numbers.
 
+</details>
+
 ## Run Boba-Batched
 
 Headless spring-mass + LBS batch scaling:
@@ -201,6 +222,18 @@ Headless spring-mass + LBS batch scaling:
 ```bash
 conda run -n phystwin-cu132 env PYTHONNOUSERSITE=1 bash benchmarks/run_sim_lbs_batch_scaling.sh --batch_sizes 1 2 4 8
 ```
+
+Batched full runtime for one case:
+
+```bash
+conda run -n phystwin-cu132 env PYTHONNOUSERSITE=1 python benchmarks/run_batched_full_runtime_case.py \
+  --case_name double_lift_cloth_3 \
+  --batch_size 4 \
+  --batched_render_variant batch_optimized
+```
+
+<details>
+<summary>Autotuning, per-instance rendering, and multi-case runs</summary>
 
 Headless spring-mass + LBS best-throughput search for one case:
 
@@ -216,14 +249,9 @@ NUM_RUNS=1 MAX_BATCH_SIZE=256 REFINE_SAMPLES=9 REFINE_ROUNDS=2 FINAL_DENSE_WINDO
   conda run -n phystwin-cu132 env PYTHONNOUSERSITE=1 bash benchmarks/run_sim_lbs_best_throughput.sh single_lift_rope
 ```
 
-Batched full runtime for one case:
+Render one instance and save a video:
 
 ```bash
-conda run -n phystwin-cu132 env PYTHONNOUSERSITE=1 python benchmarks/run_batched_full_runtime_case.py \
-  --case_name double_lift_cloth_3 \
-  --batch_size 4 \
-  --batched_render_variant batch_optimized
-
 conda run -n phystwin-cu132 env PYTHONNOUSERSITE=1 python benchmarks/run_batched_full_runtime_case.py \
   --case_name double_lift_cloth_3 \
   --batch_size 4 \
@@ -239,6 +267,8 @@ conda run -n phystwin-cu132 env PYTHONNOUSERSITE=1 bash benchmarks/run_batched_f
 conda run -n phystwin-cu132 env PYTHONNOUSERSITE=1 bash benchmarks/run_batched_full_runtime.sh --batch_size 4 --render_mode instance --instance_id 2 --save_video
 ```
 
+</details>
+
 ## Boba-Distributed
 
 `Boba-Distributed` will be documented in the future `Boba-Distributed` branch. Use the README in that branch for the setup and execution commands for the distributed design.
@@ -248,6 +278,9 @@ conda run -n phystwin-cu132 env PYTHONNOUSERSITE=1 bash benchmarks/run_batched_f
 For the full benchmark entrypoint reference, including every script option,
 environment override, and output layout, see
 [`benchmarks/README.md`](benchmarks/README.md).
+
+<details>
+<summary>Common benchmark commands and defaults</summary>
 
 Full-runtime performance benchmark:
 
@@ -300,6 +333,8 @@ Defaults when unspecified:
 - best-throughput autotune: `NUM_RUNS=1`, `MAX_BATCH_SIZE=256`, `REFINE_SAMPLES=9`, `REFINE_ROUNDS=2`, `FINAL_DENSE_WINDOW=8`
 
 This path still requires an X11/OpenGL display because the full-runtime renderer creates a GLFW window.
+
+</details>
 
 ## Outputs
 

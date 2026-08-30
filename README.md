@@ -358,3 +358,10 @@ If you find Boba useful, please cite:
   year      = {2026}
 }
 ```
+
+## License
+
+Except where otherwise noted, Boba is licensed under the
+[Apache License 2.0](LICENSE). See [NOTICE](NOTICE) for attribution information.
+Vendored third-party software retains its original license; consult the license
+files distributed with those components.

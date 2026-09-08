@@ -15,7 +15,6 @@ dependencies:
       - --extra-index-url https://download.pytorch.org/whl/cu130
       - torch==2.10.0+cu130
       - torchvision==0.25.0+cu130
-      - torchaudio==2.10.0+cu130
       - numpy==1.26.4
       - scipy==1.15.3
       - PyYAML==6.0.3

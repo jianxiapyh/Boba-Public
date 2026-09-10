@@ -1,4 +1,5 @@
 import os
+import re
 import torch
 import torch.nn.functional as F
 # from e3nn import o3
@@ -7,6 +8,42 @@ import torch.nn.functional as F
 """
 Some functions are borrowed from PhysDreamer: https://github.com/a1600012888/PhysDreamer/blob/main/physdreamer/gaussian_3d/utils/rigid_body_utils.py
 """
+
+
+def eigh_3x3(matrices: torch.Tensor, chunk_size: int | None = None):
+    """Symmetric 3x3 eigendecomposition (lower triangle, ascending values).
+
+    CUDA inference uses one dedicated cuSOLVER syevjBatched call on every GPU.
+    This avoids PyTorch's hardware-dependent generic solver/workspace choice.
+    CPU and autograd calls retain torch.linalg.eigh. The optional chunk size
+    is for explicit diagnostics; production never splits batches by GPU model.
+    Input is preserved. Eigenvector signs and degenerate bases are not unique.
+    """
+    if matrices.ndim != 3 or matrices.shape[-2:] != (3, 3):
+        raise ValueError(f"Expected (N, 3, 3) matrices, got {matrices.shape}")
+    if chunk_size is not None and chunk_size < 1:
+        raise ValueError("chunk_size must be positive")
+    solve = torch.linalg.eigh
+    if matrices.is_cuda and not (torch.is_grad_enabled() and matrices.requires_grad):
+        from ._cusolver_eigh import extension
+        solve = extension().eigh_3x3
+    if chunk_size is None or matrices.shape[0] <= chunk_size:
+        return solve(matrices)
+
+    eigenvalues, eigenvectors = [], []
+    for start in range(0, matrices.shape[0], chunk_size):
+        try:
+            values, vectors = solve(matrices[start:start + chunk_size])
+        except torch.linalg.LinAlgError as exc:
+            message = re.sub(
+                r"Batch element (\d+)",
+                lambda match: f"Batch element {start + int(match.group(1))}",
+                str(exc),
+            )
+            raise torch.linalg.LinAlgError(message) from exc
+        eigenvalues.append(values)
+        eigenvectors.append(vectors)
+    return torch.cat(eigenvalues, dim=0), torch.cat(eigenvectors, dim=0)
 
 
 def _sqrt_positive_part(x: torch.Tensor) -> torch.Tensor:

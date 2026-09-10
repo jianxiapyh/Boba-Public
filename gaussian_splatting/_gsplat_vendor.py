@@ -5,9 +5,11 @@ import os
 import sys
 from pathlib import Path
 
+from .cuda_linalg import require_runtime
+
 
 EXPECTED_CONDA_ENV = "phystwin-cu132"
-SUPPORTED_CONDA_ENVS = {"phystwin", "phystwin-cu130", "phystwin-cu132"}
+SUPPORTED_CONDA_ENVS = {"phystwin-cu132"}
 REPO_ROOT = Path(__file__).resolve().parents[1]
 VENDORED_GSPLAT_ROOT = Path(__file__).resolve().parent / "submodules" / "gsplat"
 VENDORED_GSPLAT_PACKAGE = VENDORED_GSPLAT_ROOT / "gsplat"
@@ -15,19 +17,13 @@ VENDORED_GSPLAT_PACKAGE = VENDORED_GSPLAT_ROOT / "gsplat"
 
 def _install_hint() -> str:
     return (
-        f"From the repository root ({REPO_ROOT}), install the vendored gsplat:\n"
-        "  phystwin-cu132 / phystwin-cu130: "
-        "./env_install/build_cuda13_extensions.sh\n"
-        "  phystwin: conda run -n phystwin env PYTHONNOUSERSITE=1 "
-        "BUILD_NO_CUDA=1 python -m pip install -e "
-        "./gaussian_splatting/submodules/gsplat"
+        "Activate phystwin-cu132 and run "
+        "bash env_install/build_cuda13_extensions.sh. "
+        "Boba requires its bundled gsplat source."
     )
 
 
 def _active_env_name() -> str:
-    env_name = os.environ.get("CONDA_DEFAULT_ENV")
-    if env_name:
-        return env_name
     return Path(sys.prefix).resolve().name
 
 
@@ -82,6 +78,7 @@ def validate_gsplat_runtime(gsplat_module) -> None:
 
 
 def import_gsplat():
+    require_runtime()
     active_env = _active_env_name()
     if active_env not in SUPPORTED_CONDA_ENVS:
         raise RuntimeError(
@@ -97,7 +94,7 @@ def import_gsplat():
         gsplat_module = importlib.import_module("gsplat")
     except ModuleNotFoundError as exc:
         raise RuntimeError(
-            "Boba could not import gsplat from the active phystwin environment.\n"
+            "Boba could not import gsplat from the active phystwin-cu132 environment.\n"
             f"{_install_hint()}"
         ) from exc
 

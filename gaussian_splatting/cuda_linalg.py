@@ -1,96 +1,35 @@
-"""Fixed production CUDA linear-algebra policy for Boba."""
+"""Shared production environment and cuSOLVER policy."""
 
-from __future__ import annotations
+import sys
+from pathlib import Path
 
-from typing import Optional, Tuple
-
-
+EXPECTED_CONDA_ENV = "phystwin-cu132"
 CUSOLVER_BACKEND = "cusolver"
-MIN_CUDA_MAJOR_FOR_COMPUTE_CAPABILITY_12 = 13
 
 
-def cuda_build_major(cuda_build: Optional[str]) -> Optional[int]:
-    if cuda_build is None:
-        return None
-    try:
-        return int(str(cuda_build).strip().split(".", 1)[0])
-    except (TypeError, ValueError):
-        return None
-
-
-def normalize_device_capability(device_capability) -> Tuple[int, int]:
-    try:
-        major, minor = device_capability
-        major = int(major)
-        minor = int(minor)
-    except (TypeError, ValueError) as exc:
+def require_runtime(torch_module=None):
+    # The executing interpreter is authoritative, including under conda run.
+    if Path(sys.prefix).resolve().name != EXPECTED_CONDA_ENV:
         raise RuntimeError(
-            f"Unable to interpret CUDA device capability {device_capability!r}."
-        ) from exc
-    if major < 0 or minor < 0:
-        raise RuntimeError(
-            f"Unable to interpret CUDA device capability {device_capability!r}."
+            "Boba requires the 'phystwin-cu132' conda environment. "
+            f"Python prefix: {sys.prefix!r}. Run: conda activate phystwin-cu132"
         )
-    return major, minor
-
-
-def validate_cuda_compatibility(
-    cuda_build: Optional[str],
-    device_capability,
-) -> Tuple[int, int]:
-    capability = normalize_device_capability(device_capability)
-    build_major = cuda_build_major(cuda_build)
-    if build_major is None:
-        raise RuntimeError(
-            "Boba requires a CUDA-enabled PyTorch build with a parseable "
-            f"torch.version.cuda value; found {cuda_build!r}. Use the supported "
-            "recommended phystwin-cu132 environment, phystwin-cu130 for "
-            "CUDA 13.0 reproduction, or legacy phystwin environment."
-        )
-    if (
-        capability[0] >= 12
-        and build_major < MIN_CUDA_MAJOR_FOR_COMPUTE_CAPABILITY_12
-    ):
-        raise RuntimeError(
-            f"CUDA device capability {capability[0]}.{capability[1]} requires "
-            "a PyTorch build against CUDA 13 or newer for Boba's cuSOLVER "
-            f"runtime; found torch.version.cuda={cuda_build!r}. Use the "
-            "recommended phystwin-cu132 environment. The phystwin-cu130 "
-            "environment is retained for CUDA 13.0 reproduction. The CUDA "
-            "version shown by nvidia-smi is driver capability, not the CUDA "
-            "version used to build PyTorch."
-        )
-    return capability
-
-
-def configure_linalg_backend(torch_module) -> str:
+    if torch_module is None:
+        import torch as torch_module
+    build = torch_module.version.cuda
     try:
-        device_capability = torch_module.cuda.get_device_capability()
-    except (AttributeError, RuntimeError) as exc:
+        version = tuple(int(part) for part in build.split(".")[:2])
+    except (AttributeError, ValueError):
+        version = ()
+    if version < (13, 2):
         raise RuntimeError(
-            "Boba could not read the active CUDA device capability. Confirm "
-            "that a supported NVIDIA GPU is visible to PyTorch."
-        ) from exc
+            "Boba requires PyTorch built with CUDA 13.2 or newer in "
+            f"phystwin-cu132; found torch.version.cuda={build!r}. "
+            "The CUDA version shown by nvidia-smi describes the driver."
+        )
 
-    validate_cuda_compatibility(
-        cuda_build=getattr(getattr(torch_module, "version", None), "cuda", None),
-        device_capability=device_capability,
-    )
-    try:
-        torch_module.backends.cuda.preferred_linalg_library(CUSOLVER_BACKEND)
-    except AttributeError as exc:
-        raise RuntimeError(
-            "The active PyTorch build does not expose "
-            "torch.backends.cuda.preferred_linalg_library()."
-        ) from exc
+
+def configure_linalg_backend(torch_module):
+    require_runtime(torch_module)
+    torch_module.backends.cuda.preferred_linalg_library(CUSOLVER_BACKEND)
     return CUSOLVER_BACKEND
-
-
-__all__ = [
-    "CUSOLVER_BACKEND",
-    "MIN_CUDA_MAJOR_FOR_COMPUTE_CAPABILITY_12",
-    "configure_linalg_backend",
-    "cuda_build_major",
-    "normalize_device_capability",
-    "validate_cuda_compatibility",
-]

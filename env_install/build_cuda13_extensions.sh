@@ -5,29 +5,10 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 ACTIVE_PREFIX="${CONDA_PREFIX:-}"
 RUNTIME_HOOK_ROOT="${REPO_ROOT}/env_install/conda"
 
-ACTIVE_ENV_NAME=""
-if [[ -n "${ACTIVE_PREFIX}" ]]; then
-  ACTIVE_ENV_NAME="$(basename "${ACTIVE_PREFIX}")"
-fi
-case "${ACTIVE_ENV_NAME}" in
-  phystwin-cu130)
-    DEFAULT_EXPECTED_ENV="phystwin-cu130"
-    DEFAULT_TORCH_VERSION="2.10.0+cu130"
-    DEFAULT_TORCH_CUDA="13.0"
-    DEFAULT_CACHE_TAG="cu130"
-    ;;
-  *)
-    DEFAULT_EXPECTED_ENV="phystwin-cu132"
-    DEFAULT_TORCH_VERSION="2.12.1+cu132"
-    DEFAULT_TORCH_CUDA="13.2"
-    DEFAULT_CACHE_TAG="cu132"
-    ;;
-esac
-
-EXPECTED_ENV="${BOBA_CUDA_ENV_NAME:-${DEFAULT_EXPECTED_ENV}}"
-EXPECTED_TORCH_VERSION="${BOBA_TORCH_VERSION:-${DEFAULT_TORCH_VERSION}}"
-EXPECTED_TORCH_CUDA="${BOBA_TORCH_CUDA:-${DEFAULT_TORCH_CUDA}}"
-CACHE_TAG="${BOBA_CUDA_CACHE_TAG:-${DEFAULT_CACHE_TAG}}"
+EXPECTED_ENV="phystwin-cu132"
+EXPECTED_TORCH_VERSION="2.12.1+cu132"
+EXPECTED_TORCH_CUDA="13.2"
+CACHE_TAG="cu132"
 
 if [[ -z "${ACTIVE_PREFIX}" || "$(basename "${ACTIVE_PREFIX}")" != "${EXPECTED_ENV}" ]]; then
   echo "Activate ${EXPECTED_ENV} before rebuilding CUDA extensions." >&2
@@ -168,7 +149,8 @@ for name, module in modules.items():
 
 probe = torch.eye(3, dtype=torch.float32, device="cuda").unsqueeze(0)
 torch.backends.cuda.preferred_linalg_library("cusolver")
-torch.linalg.eigh(probe)
+from gaussian_splatting.rotation_utils import eigh_3x3
+eigh_3x3(probe)
 torch.cuda.synchronize()
 PY
 

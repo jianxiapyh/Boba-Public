@@ -73,93 +73,31 @@ runtime backend-selection environment variable and no MAGMA fallback.
 <details>
 <summary>CUDA 13.2 build and compatibility details</summary>
 
-CUDA 13.2 is the default for new Boba installations. Together with PyTorch
-2.12.1, its cuSOLVER path removes the large-batch `torch.linalg.eigh`
-matrix-count failure observed with the CUDA 13.0 stack, allowing every case in
-the paper's 19-case capacity measurement to run until its GPU-memory boundary.
+The current branch requires the `phystwin-cu132` interpreter and PyTorch
+built with CUDA 13.2 or newer on every GPU. CUDA 12 and `phystwin-cu130`
+environments are no longer supported by this branch; their manifests are
+retained only as historical records. Use an older commit to reproduce an
+older software stack.
 
-Boba validates that runtime imports resolve to its vendored `gsplat` copy. A
-system-level or user-level `gsplat` install is not a supported configuration.
+Boba validates that runtime imports resolve to its vendored `gsplat` copy.
+The extension installer builds `simple-knn`, `fused-ssim`, PyCUDA with OpenGL
+support and vendored `gsplat`, and warms the dedicated cuSOLVER 3x3 binding.
+It verifies the pinned PyTorch/CUDA versions. Runtime activation hooks derive
+library paths from `CONDA_PREFIX`; reactivate the environment after building.
 
-The CUDA 13 builder compiles only `simple-knn`, `fused-ssim`, PyCUDA with
-OpenGL support, and Boba's vendored `gsplat`. It detects all visible GPU
-compute capabilities, removes duplicates, and builds the matching native
-cubins. For example, a machine exposing compute capabilities 8.9 and 12.0
-builds both `sm_89` and `sm_120`. The builder detects whether the active
-environment is `phystwin-cu130` or `phystwin-cu132` and verifies the matching
-PyTorch and CUDA versions.
-
-The editable `gsplat` build stores its native extension in this checkout. If
-you switch between the CUDA 13.0 and CUDA 13.2 environments, rerun
-`build_cuda13_extensions.sh` in the newly activated environment before running
-Boba.
-
-The builder also installs environment-local Conda activation hooks for the
-CUDA 13, PyTorch, and C++ runtime libraries. Reactivating the environment
-makes those paths available without a machine-specific `LD_LIBRARY_PATH`;
-the hooks derive them from `CONDA_PREFIX` and restore the previous library
-path on deactivation. Commands launched with `conda run -n phystwin-cu130` or
-`conda run -n phystwin-cu132` receive the same activation hook automatically.
-
-For a headless build, or to prepare one environment for GPUs that are not
-visible during installation, provide a numeric architecture list explicitly:
+The builder detects visible GPU capabilities and compiles matching cubins.
+For a headless build or a machine with additional deployment GPUs, supply an
+explicit numeric architecture list:
 
 ```bash
-TORCH_CUDA_ARCH_LIST="8.9;12.0+PTX" \
-  ./env_install/build_cuda13_extensions.sh
+TORCH_CUDA_ARCH_LIST="8.9;12.0+PTX" ./env_install/build_cuda13_extensions.sh
 ```
 
-The builder accepts numeric capabilities separated by spaces, semicolons, or
-commas, with an optional `+PTX` suffix. It verifies that every Boba extension
-links CUDA 13 and contains cubins for every requested architecture.
-
-At runtime Boba reads the active device capability through PyTorch. Capability
-12.x and newer requires a PyTorch build against CUDA 13 or newer under Boba's
-compatibility policy; this is based on capability rather than a GPU product
-name. `nvidia-smi` reports the maximum CUDA version supported by the installed
-driver, while `torch.version.cuda` reports the CUDA version used to build the
-active PyTorch package.
-
-</details>
-
-<details>
-<summary>CUDA 13.0 reproduction environment</summary>
-
-The previous `phystwin-cu130` environment remains available for reproducing
-the earlier CUDA 13.0 benchmark stack:
-
-```bash
-conda env create -f env_install/phystwin-cu130.yml
-conda activate phystwin-cu130
-./env_install/build_cuda13_extensions.sh
-conda deactivate
-conda activate phystwin-cu130
-```
-
-Because the editable `gsplat` binary is shared by the checkout, rerun the
-builder whenever switching back to `phystwin-cu132`.
-
-</details>
-
-<details>
-<summary>Legacy CUDA 12 environment</summary>
-
-The original install script targets a CUDA 12.1 desktop setup. Boba has also
-been tested on CUDA 11.8 and CUDA 12.2. Use this legacy path when the GPU or
-driver cannot run the recommended CUDA 13.2 environment:
-
-```bash
-export PATH={YOUR_DIR}/cuda/cuda-12.1/bin:$PATH
-export LD_LIBRARY_PATH={YOUR_DIR}/cuda/cuda-12.1/lib64:$LD_LIBRARY_PATH
-
-conda create -y -n phystwin python=3.10
-bash ./env_install/env_install.sh
-```
-
-The legacy script installs PyTorch 2.4.0 with CUDA 12.1, Warp, Open3D,
-OpenGL/GLFW/PyCUDA, the vendored `gsplat`, kornia, and the compiled KNN
-extension. Substitute `phystwin` for `phystwin-cu132` in the examples below
-when using this environment.
+CUDA inference now calls `syevjBatched` directly in one batch on every GPU,
+including RTX 3090, RTX 4090 and Blackwell, avoiding the generic solver's
+large temporary workspace. The physical solver and LBS formulas are
+unchanged. cuSOLVER is fixed; `BOBA_LINALG_BACKEND` does not override it.
+See [solver behavior, build and validation notes](gaussian_splatting/CUSOLVER.md).
 
 </details>
 

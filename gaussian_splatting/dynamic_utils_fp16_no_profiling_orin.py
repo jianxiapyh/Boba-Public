@@ -1,4 +1,5 @@
 import torch
+from .rotation_utils import eigh_3x3
 import kornia
 from torch.profiler import profile, ProfilerActivity, record_function
 import torch.nn.functional as Func
@@ -455,7 +456,7 @@ def interpolate_motions_speedup_rotation_reuse(
             X = F_rec
             G = X.transpose(-2, -1) @ X
             G = 0.5 * (G + G.transpose(-2, -1))
-            w, V = torch.linalg.eigh(G)
+            w, V = eigh_3x3(G)
             idx = torch.argsort(w, dim=-1, descending=True)
             w   = w.gather(-1, idx)
             V   = V.gather(-1, idx.unsqueeze(-2).expand_as(V))
@@ -945,7 +946,7 @@ def lbs_with_rotation_reuse(
         X = F_to_compute
         G = X.transpose(-2, -1) @ X
         G = 0.5 * (G + G.transpose(-2, -1))
-        eigenvalues, eigenvectors = torch.linalg.eigh(G)
+        eigenvalues, eigenvectors = eigh_3x3(G)
         
         # Sort eigenvalues/vectors in descending order
         sort_idx = torch.argsort(eigenvalues, dim=-1, descending=True)

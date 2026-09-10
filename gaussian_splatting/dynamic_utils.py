@@ -62,9 +62,9 @@ def _configure_linalg_backend():
 
 
 BOBA_DEVICE = _read_device_override()
+SELECTED_LINALG_BACKEND = _configure_linalg_backend()
 DETECTED_DEVICE_NAME = _detect_device_name()
 SELECTED_DYNAMIC_UTIL_VARIANT = _select_variant(BOBA_DEVICE, DETECTED_DEVICE_NAME)
-SELECTED_LINALG_BACKEND = _configure_linalg_backend()
 SELECTED_DYNAMIC_UTIL_MODULE = (
     "gaussian_splatting.dynamic_utils_fp16_no_profiling_orin"
     if SELECTED_DYNAMIC_UTIL_VARIANT == "orin"

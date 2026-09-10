@@ -49,7 +49,9 @@ class Cuda13RuntimeHookTests(unittest.TestCase):
         )
 
     def run_hooks(self, script, original_library_path=None):
-        environment = os.environ.copy()
+        # Test a fresh activation, independent of the caller's active Conda hook.
+        environment = {key: value for key, value in os.environ.items()
+                       if not key.startswith("_BOBA_CU130_")}
         environment["CONDA_PREFIX"] = str(self.prefix)
         if original_library_path is None:
             environment.pop("LD_LIBRARY_PATH", None)

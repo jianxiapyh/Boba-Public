@@ -6,16 +6,35 @@
 
 ## News
 
+- **September 12, 2026 — Fused compositing.** On an NVIDIA RTX 4090,
+  compositor fusion increases mean aggregate throughput by **29.0%**, from
+  **3,274 to 4,223 instance-steps/s**, compared with the unfused CUDA 13.2
+  stack. This uses the same 22 cases, per-case batch sizes, 640x480 output,
+  and pruned Gaussian policy as the historical **3,310** benchmark, without
+  retuning batch sizes. The gain over that historical result is **27.6%**.[^4090-throughput]
+
 - **August 17, 2026 — Post-acceptance solver update.** Boba now defaults to
   PyTorch 2.12.1 with CUDA 13.2 and cuSOLVER. For Boba's batched 3x3
-  eigendecompositions, this replaces the paper-era CUDA 12/MAGMA path that
-  copied matrices to the CPU for LAPACK and copied the results back to the GPU.
+  eigendecompositions, the dedicated GPU solver avoids the generic
+  eigensolver's large temporary workspace.
   It also removes the large-batch `torch.linalg.eigh` matrix-count failure
   observed with the initial CUDA 13.0/cuSOLVER stack. Repeating the measurements
   in the paper on an NVIDIA RTX PRO 6000 Blackwell GPU, the updated stack reaches
   an average maximum capacity of 1,489 instances and a largest-case maximum of
   2,819, while increasing average aggregate throughput by 13.5% (from 3,530 to
-  4,008 FPS).
+  4,008 FPS). On an NVIDIA RTX 4090, throughput at the original benchmark
+  batch sizes remains **approximately unchanged**: **3,274 versus 3,310
+  instance-steps/s** historically (-1.1%). This compares the complete software
+  stacks and does not isolate the cuSOLVER-only effect.[^4090-throughput]
+
+[^4090-throughput]: The RTX 4090 comparison uses one full replay per case and
+    variant (44 fresh-process runs), with the first two frames excluded.
+    Throughput is the arithmetic mean of the 22 per-case instance-step rates.
+    `double_stretch_zebra` and `rope_double_hand` have non-finite final physics
+    states in both current variants; these rates do not establish trajectory
+    validity. The remaining 20 cases show a 28.6% fusion gain, or 26.7% over
+    the same historical subset. Repeated measurements are needed to distinguish
+    small throughput differences from run-to-run variation.
 
 > This repository contains the source code for Boba, and this branch currently includes `Boba-Local` and `Boba-Batched`.
 > For `Boba-Distributed`, switch to the future `Boba-Distributed` branch and follow the README there.

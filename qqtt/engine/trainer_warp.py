@@ -1113,6 +1113,17 @@ class InvPhyTrainerWarp:
                 f"{tuple(batch_rendering.shape)}"
             )
 
+        if (
+            batch_rendering.is_cuda
+            and batch_rendering.dtype == overlay.dtype == torch.float32
+            and overlay.device == batch_rendering.device
+            and tuple(overlay.shape) == (*batch_rendering.shape[2:], 3)
+            and not overlay.requires_grad
+        ):
+            from qqtt.utils.image_compositing_warp import composite
+
+            return composite(batch_rendering, overlay)
+
         images = batch_rendering.permute(0, 2, 3, 1).detach().clamp(0, 1)
         image_mask = torch.logical_and(
             (images[..., :3] != 1.0).any(dim=3),

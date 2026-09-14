@@ -114,7 +114,10 @@ def _format_gsplat_batch_images_output(
     render_alphas,
     info,
     num_gaussians: int,
+    *,
+    separate_alpha: bool = False,
 ):
+    """Return RGB views when the caller accepts the separate alpha buffer."""
     if render_colors.dim() != 5 or render_alphas.dim() != 5:
         raise ValueError(
             "batch image rendering expects render_colors/render_alphas with "
@@ -127,6 +130,9 @@ def _format_gsplat_batch_images_output(
         )
 
     rgb = render_colors[:, 0, :, :, :3]
+    if separate_alpha:
+        # Permuting only changes metadata; Warp reads the original NHWC storage.
+        return rgb.permute(0, 3, 1, 2), None, None, None
     alpha = render_alphas[:, 0]
     rendered_image = render_colors.new_empty(
         (
@@ -209,6 +215,9 @@ def render_gsplat(
             batch_image_mode = bool(
                 getattr(pc, "uses_batch_image_rendering", False)
             )
+            separate_alpha = batch_image_mode and bool(
+                getattr(pc, "uses_separate_render_alpha", False)
+            )
             if batch_image_mode and render_normals:
                 raise NotImplementedError(
                     "Batch image gsplat rendering does not support normal rendering."
@@ -261,6 +270,7 @@ def render_gsplat(
                         render_alphas,
                         info,
                         num_gaussians=means3D.shape[-2],
+                        separate_alpha=separate_alpha,
                     )
                 )
             else:
@@ -319,6 +329,7 @@ def render_gsplat(
     # They will be excluded from value updates used in the splitting criteria.
     return_pkg = {
         "render": rendered_image,
+        "alpha": render_alphas[:, 0, :, :, 0] if separate_alpha else None,
         "depth": depth_image,
         "normal": normal_image,
         "viewspace_points": screenspace_points,
@@ -365,6 +376,9 @@ def render_gsplat_shared_template(
             batch_image_mode = bool(
                 getattr(pc, "uses_batch_image_rendering", False)
             )
+            separate_alpha = batch_image_mode and bool(
+                getattr(pc, "uses_separate_render_alpha", False)
+            )
 
         shared_template_render_mode = "RGB" if batch_image_mode else "RGB+ED"
         render_colors, render_alphas, info = rasterization_shared_template(
@@ -401,6 +415,7 @@ def render_gsplat_shared_template(
                         render_alphas,
                         info,
                         num_gaussians=means3D.shape[0],
+                        separate_alpha=separate_alpha,
                     )
                 )
             else:
@@ -414,6 +429,7 @@ def render_gsplat_shared_template(
 
     return {
         "render": rendered_image,
+        "alpha": render_alphas[:, 0, :, :, 0] if separate_alpha else None,
         "depth": depth_image,
         "normal": None,
         "viewspace_points": screenspace_points,

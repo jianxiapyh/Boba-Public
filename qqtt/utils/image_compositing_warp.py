@@ -22,16 +22,17 @@ def _clamp_color(value: float):
 
 @wp.kernel
 def _composite_pixels(
-    rgba: wp.array4d(dtype=float),
+    rgb: wp.array4d(dtype=float),
+    render_alpha: wp.array3d(dtype=float),
     overlay: wp.array3d(dtype=float),
     frames: wp.array4d(dtype=float),
     image_mask: wp.array3d(dtype=wp.bool),
 ):
     instance, y, x = wp.tid()
-    red = _clamp_color(rgba[instance, 0, y, x])
-    green = _clamp_color(rgba[instance, 1, y, x])
-    blue = _clamp_color(rgba[instance, 2, y, x])
-    opacity = _clamp_color(rgba[instance, 3, y, x])
+    red = _clamp_color(rgb[instance, 0, y, x])
+    green = _clamp_color(rgb[instance, 1, y, x])
+    blue = _clamp_color(rgb[instance, 2, y, x])
+    opacity = _clamp_color(render_alpha[instance, y, x])
     visible = (red != 1.0 or green != 1.0 or blue != 1.0) and opacity > ALPHA_THRESHOLD
     alpha = opacity if visible else 0.0
     transmittance = 1.0 - alpha
@@ -43,14 +44,17 @@ def _composite_pixels(
     image_mask[instance, y, x] = visible
 
 
-def composite(batch_rendering, overlay):
+def composite(batch_rendering, overlay, *, batch_alpha=None):
     """Return the original RGB values and mask on the caller's CUDA stream.
 
-    Inputs retain their strides. The background is one shared HxWx3 image,
+    RGB and alpha retain their strides, including views of legacy RGBA input.
+    The background is one shared HxWx3 image,
     while frames and masks are per instance. RGB values use the [0,255] scale;
     final display clamping remains the caller's responsibility.
     """
     batch, _, height, width = batch_rendering.shape
+    if batch_alpha is None:
+        batch_alpha = batch_rendering[:, 3]
     frames = torch.empty((batch, height, width, 3), device=batch_rendering.device,
                          dtype=torch.float32)
     mask = torch.empty((batch, height, width), device=batch_rendering.device,
@@ -60,7 +64,8 @@ def composite(batch_rendering, overlay):
     wp.launch(
         _composite_pixels,
         dim=(batch, height, width),
-        inputs=[wp.from_torch(batch_rendering.detach()), wp.from_torch(overlay)],
+        inputs=[wp.from_torch(batch_rendering.detach()),
+                wp.from_torch(batch_alpha.detach()), wp.from_torch(overlay)],
         outputs=[wp.from_torch(frames), wp.from_torch(mask)],
         stream=wp.stream_from_torch(torch.cuda.current_stream(batch_rendering.device)),
     )

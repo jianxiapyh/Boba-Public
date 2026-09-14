@@ -1106,11 +1106,21 @@ class InvPhyTrainerWarp:
         selected_points = torch.cat(point_chunks, dim=0)
         return selected_points - runtime.instance_offsets[instance_id]
 
-    def _composite_batch_images_without_shadows(self, batch_rendering, overlay):
-        if batch_rendering.ndim != 4 or batch_rendering.shape[1] != 4:
+    def _composite_batch_images_without_shadows(
+        self, batch_rendering, overlay, *, batch_alpha=None
+    ):
+        channels = 4 if batch_alpha is None else 3
+        if batch_rendering.ndim != 4 or batch_rendering.shape[1] != channels:
             raise ValueError(
-                "batch image rendering expects [B, 4, H, W], got "
+                f"batch image rendering expects [B, {channels}, H, W], got "
                 f"{tuple(batch_rendering.shape)}"
+            )
+        if batch_alpha is not None and tuple(batch_alpha.shape) != (
+            batch_rendering.shape[0], *batch_rendering.shape[2:]
+        ):
+            raise ValueError(
+                "separate render alpha expects [B, H, W], got "
+                f"{tuple(batch_alpha.shape)}"
             )
 
         if (
@@ -1119,20 +1129,32 @@ class InvPhyTrainerWarp:
             and overlay.device == batch_rendering.device
             and tuple(overlay.shape) == (*batch_rendering.shape[2:], 3)
             and not overlay.requires_grad
+            and (
+                batch_alpha is None
+                or (
+                    batch_alpha.dtype == torch.float32
+                    and batch_alpha.device == batch_rendering.device
+                )
+            )
         ):
             from qqtt.utils.image_compositing_warp import composite
 
-            return composite(batch_rendering, overlay)
+            return composite(batch_rendering, overlay, batch_alpha=batch_alpha)
 
         images = batch_rendering.permute(0, 2, 3, 1).detach().clamp(0, 1)
+        opacity = (
+            images[..., 3]
+            if batch_alpha is None
+            else batch_alpha.detach().clamp(0, 1)
+        )
         image_mask = torch.logical_and(
             (images[..., :3] != 1.0).any(dim=3),
-            images[..., 3] > 100 / 255,
+            opacity > 100 / 255,
         )
         alpha = torch.where(
             image_mask[..., None],
-            images[..., 3:4],
-            torch.zeros_like(images[..., 3:4]),
+            opacity[..., None],
+            torch.zeros_like(opacity[..., None]),
         )
         frames = overlay.unsqueeze(0) * (1.0 - alpha) + images[..., :3] * alpha * 255.0
         return frames, image_mask
@@ -1964,6 +1986,7 @@ class InvPhyTrainerWarp:
                     runtime.gaussians,
                     gaussian_render_mode=gaussian_render_mode,
                 )
+            render_gaussians.uses_separate_render_alpha = render_mode == "batch_images"
 
             frame_count = runtime.frame_count
             prev_target = runtime.prev_target
@@ -2045,6 +2068,7 @@ class InvPhyTrainerWarp:
                     batch_frames, _ = self._composite_batch_images_without_shadows(
                         rendering,
                         overlay,
+                        batch_alpha=results.get("alpha"),
                     )
                     batch_grid = None
                     if display_batch_grid:

@@ -6,6 +6,10 @@
 
 ## News
 
+- **September 14, 2026 — Make rendering more efficient.** Using the same cases as the
+  paper, Boba now reaches a mean aggregate throughput of
+  **4,534 instance-steps/s** on an NVIDIA RTX 4090.
+
 - **September 12, 2026 — Make compositing more efficient.** Using the same cases as the
   paper, Boba now reaches a mean aggregate throughput of
   **4,223 instance-steps/s** on an NVIDIA RTX 4090, a **27.6%** increase over

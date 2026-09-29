@@ -597,6 +597,7 @@ class InvPhyTrainerWarp:
             current_pos, current_quat = lbs_with_rotation_reuse(
                 current_mass_nodes=x,
                 cache=rotation_cache,
+                copy_outputs=False,
             )
 
             if frame_count in export_frame_set:
@@ -1059,6 +1060,7 @@ class InvPhyTrainerWarp:
                         current_pos, current_rot = lbs_with_rotation_reuse(
                             current_mass_nodes=x,
                             cache=rotation_cache,
+                            copy_outputs=False,
                         )
 
                         interp_time = interp_timer.stop()

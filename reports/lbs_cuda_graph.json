@@ -1,0 +1,1179 @@
+{
+  "repository": "https://github.com/jianxiapyh/Boba-Public",
+  "branch": "Boba_Batched",
+  "baseline_revision": "77a3aa309d325fe3ae022d47c91d9b3037cdeb00",
+  "gpu": "NVIDIA RTX PRO 6000 Blackwell Max-Q Workstation Edition",
+  "implementation": "Two fixed-shape CUDA graphs surrounding the unchanged dynamic rotation update; runtime consumes borrowed output buffers.",
+  "local_edits_preserved": [
+    "benchmarks/README.md",
+    "benchmarks/run_sim_lbs_batch_scaling_case.py",
+    "qqtt/engine/trainer_warp.py"
+  ],
+  "lbs": [
+    {
+      "case": "single_lift_rope",
+      "batch_size": 1,
+      "gaussians_per_instance": 38476,
+      "mass_nodes_per_instance": 432,
+      "frames": 50,
+      "measured_frames_per_round": 42,
+      "original_ms": 2.5927998275229975,
+      "graph_ms": 2.1353201632986645,
+      "latency_reduction_percent": 17.644233826619047,
+      "round_mean_ms": {
+        "original": [
+          2.5927998275229975,
+          2.594375855378097,
+          2.585916495826539
+        ],
+        "graph": [
+          2.1353201632986645,
+          2.1332127092007016,
+          2.135861569383581
+        ]
+      }
+    },
+    {
+      "case": "single_lift_rope",
+      "batch_size": 4,
+      "gaussians_per_instance": 38476,
+      "mass_nodes_per_instance": 432,
+      "frames": 50,
+      "measured_frames_per_round": 42,
+      "original_ms": 2.5824857168897455,
+      "graph_ms": 2.1105274264257226,
+      "latency_reduction_percent": 18.275349496702457,
+      "round_mean_ms": {
+        "original": [
+          2.5773146660954116,
+          2.586117285924653,
+          2.5824857168897455
+        ],
+        "graph": [
+          2.11082062395733,
+          2.1105274264257226,
+          2.1081053100282414
+        ]
+      }
+    },
+    {
+      "case": "single_lift_rope",
+      "batch_size": 16,
+      "gaussians_per_instance": 38476,
+      "mass_nodes_per_instance": 432,
+      "frames": 50,
+      "measured_frames_per_round": 42,
+      "original_ms": 2.808257902783918,
+      "graph_ms": 2.454319708271041,
+      "latency_reduction_percent": 12.603478981115186,
+      "round_mean_ms": {
+        "original": [
+          2.808257902783918,
+          2.8130719507490065,
+          2.803574499141957
+        ],
+        "graph": [
+          2.4542399249704823,
+          2.454319708271041,
+          2.459897705453581
+        ]
+      }
+    },
+    {
+      "case": "single_lift_rope",
+      "batch_size": 64,
+      "gaussians_per_instance": 38476,
+      "mass_nodes_per_instance": 432,
+      "frames": 50,
+      "measured_frames_per_round": 42,
+      "original_ms": 3.3037858790651495,
+      "graph_ms": 3.1311471649955602,
+      "latency_reduction_percent": 5.225481323215769,
+      "round_mean_ms": {
+        "original": [
+          3.30657945596613,
+          3.3037858790651495,
+          3.302166713789726
+        ],
+        "graph": [
+          3.130133355235947,
+          3.1311471649955602,
+          3.1335380737714114
+        ]
+      }
+    },
+    {
+      "case": "single_lift_rope",
+      "batch_size": 128,
+      "gaussians_per_instance": 38476,
+      "mass_nodes_per_instance": 432,
+      "frames": 50,
+      "measured_frames_per_round": 42,
+      "original_ms": 4.158565810593289,
+      "graph_ms": 4.002885951194912,
+      "latency_reduction_percent": 3.7435949432808484,
+      "round_mean_ms": {
+        "original": [
+          4.158565810593289,
+          4.158890068841477,
+          4.141991328825021
+        ],
+        "graph": [
+          4.002885951194912,
+          4.00555466989144,
+          3.997769686282568
+        ]
+      }
+    },
+    {
+      "case": "single_lift_rope",
+      "batch_size": 512,
+      "gaussians_per_instance": 38476,
+      "mass_nodes_per_instance": 432,
+      "frames": 50,
+      "measured_frames_per_round": 42,
+      "original_ms": 10.761636506123025,
+      "graph_ms": 10.635584951766456,
+      "latency_reduction_percent": 1.1713047015186826,
+      "round_mean_ms": {
+        "original": [
+          10.759706758627933,
+          10.770238906843588,
+          10.761636506123025
+        ],
+        "graph": [
+          10.613886761434731,
+          10.635584951766456,
+          10.64675408997573
+        ]
+      }
+    },
+    {
+      "case": "double_stretch_sloth",
+      "batch_size": 1,
+      "gaussians_per_instance": 102245,
+      "mass_nodes_per_instance": 2427,
+      "frames": 64,
+      "measured_frames_per_round": 56,
+      "original_ms": 2.7347664633582878,
+      "graph_ms": 2.364154213864822,
+      "latency_reduction_percent": 13.55187927229277,
+      "round_mean_ms": {
+        "original": [
+          2.7347664633582878,
+          2.742432654486038,
+          2.729601643555465
+        ],
+        "graph": [
+          2.3711251082464253,
+          2.3633441482421143,
+          2.364154213864822
+        ]
+      }
+    },
+    {
+      "case": "double_stretch_sloth",
+      "batch_size": 4,
+      "gaussians_per_instance": 102245,
+      "mass_nodes_per_instance": 2427,
+      "frames": 64,
+      "measured_frames_per_round": 56,
+      "original_ms": 2.8199362693287964,
+      "graph_ms": 2.4831665536372123,
+      "latency_reduction_percent": 11.942458393633922,
+      "round_mean_ms": {
+        "original": [
+          2.823194230066812,
+          2.8173867893721245,
+          2.8199362693287964
+        ],
+        "graph": [
+          2.4842181737767532,
+          2.4802875725851794,
+          2.4831665536372123
+        ]
+      }
+    },
+    {
+      "case": "double_stretch_sloth",
+      "batch_size": 16,
+      "gaussians_per_instance": 102245,
+      "mass_nodes_per_instance": 2427,
+      "frames": 64,
+      "measured_frames_per_round": 56,
+      "original_ms": 3.037879857791787,
+      "graph_ms": 2.8800345878283093,
+      "latency_reduction_percent": 5.195902318474648,
+      "round_mean_ms": {
+        "original": [
+          3.037879857791787,
+          3.035155694565869,
+          3.0397137473171045
+        ],
+        "graph": [
+          2.8800345878283093,
+          2.8793227538699284,
+          2.881116356417936
+        ]
+      }
+    },
+    {
+      "case": "double_stretch_sloth",
+      "batch_size": 64,
+      "gaussians_per_instance": 102245,
+      "mass_nodes_per_instance": 2427,
+      "frames": 64,
+      "measured_frames_per_round": 56,
+      "original_ms": 4.977584719849152,
+      "graph_ms": 4.85202490796967,
+      "latency_reduction_percent": 2.5225047678000543,
+      "round_mean_ms": {
+        "original": [
+          4.981682322977576,
+          4.977584719849152,
+          4.970119338915018
+        ],
+        "graph": [
+          4.85202490796967,
+          4.865453647133628,
+          4.843874864621155
+        ]
+      }
+    },
+    {
+      "case": "double_stretch_sloth",
+      "batch_size": 128,
+      "gaussians_per_instance": 102245,
+      "mass_nodes_per_instance": 2427,
+      "frames": 64,
+      "measured_frames_per_round": 56,
+      "original_ms": 7.829504999140876,
+      "graph_ms": 7.745339089264495,
+      "latency_reduction_percent": 1.0749837938109292,
+      "round_mean_ms": {
+        "original": [
+          7.836204194713251,
+          7.8271174830401185,
+          7.829504999140876
+        ],
+        "graph": [
+          7.745339089264495,
+          7.741318606089668,
+          7.749110760674479
+        ]
+      }
+    },
+    {
+      "case": "double_stretch_sloth",
+      "batch_size": 512,
+      "gaussians_per_instance": 102245,
+      "mass_nodes_per_instance": 2427,
+      "frames": 64,
+      "measured_frames_per_round": 56,
+      "original_ms": 26.983679270155594,
+      "graph_ms": 27.133978517667856,
+      "latency_reduction_percent": -0.5570005706319496,
+      "round_mean_ms": {
+        "original": [
+          26.983679270155594,
+          26.9811366628606,
+          27.010131094097492
+        ],
+        "graph": [
+          27.133978517667856,
+          27.12625120953557,
+          27.140961373723776
+        ]
+      }
+    }
+  ],
+  "full_runtime": [
+    {
+      "case": "single_lift_rope",
+      "batch_size": 1,
+      "original_frame_ms": 8.652819673220318,
+      "graph_frame_ms": 8.186764339605967,
+      "frame_latency_reduction_percent": 5.386167182667052,
+      "throughput_increase_percent": 5.692790390455804,
+      "original_instances_per_second": 115.56926386607918,
+      "graph_instances_per_second": 122.14837981376786,
+      "timing_runs": {
+        "original": [
+          {
+            "average_total_frame_time_ms": 8.575719346602758,
+            "average_full_motion_interpolation_ms": 4.646952201711369,
+            "frames_used_for_stats": 48
+          },
+          {
+            "average_total_frame_time_ms": 8.729919999837877,
+            "average_full_motion_interpolation_ms": 4.5704871378046406,
+            "frames_used_for_stats": 48
+          }
+        ],
+        "graph": [
+          {
+            "average_total_frame_time_ms": 8.120091934998829,
+            "average_full_motion_interpolation_ms": 4.182447028286914,
+            "frames_used_for_stats": 48
+          },
+          {
+            "average_total_frame_time_ms": 8.253436744213104,
+            "average_full_motion_interpolation_ms": 4.1433055625951045,
+            "frames_used_for_stats": 48
+          }
+        ]
+      },
+      "memory_samples": {
+        "original": [],
+        "graph": []
+      }
+    },
+    {
+      "case": "single_lift_rope",
+      "batch_size": 128,
+      "original_frame_ms": 17.16262200474739,
+      "graph_frame_ms": 16.97831639647484,
+      "frame_latency_reduction_percent": 1.0738779204108284,
+      "throughput_increase_percent": 1.085535243711333,
+      "original_instances_per_second": 7458.067885233017,
+      "graph_instances_per_second": 7539.027840627136,
+      "timing_runs": {
+        "original": [
+          {
+            "average_total_frame_time_ms": 17.085537950197857,
+            "average_full_motion_interpolation_ms": 4.222009882013848,
+            "frames_used_for_stats": 48
+          },
+          {
+            "average_total_frame_time_ms": 17.239706059296925,
+            "average_full_motion_interpolation_ms": 4.15125714971664,
+            "frames_used_for_stats": 48
+          }
+        ],
+        "graph": [
+          {
+            "average_total_frame_time_ms": 16.95220347245534,
+            "average_full_motion_interpolation_ms": 4.075484605545693,
+            "frames_used_for_stats": 48
+          },
+          {
+            "average_total_frame_time_ms": 17.004429320494335,
+            "average_full_motion_interpolation_ms": 4.111989772066157,
+            "frames_used_for_stats": 48
+          }
+        ]
+      },
+      "memory_samples": {
+        "original": [
+          {
+            "runtime_peak_allocated_bytes": 2717534720,
+            "runtime_peak_reserved_bytes": 3481272320,
+            "runtime_end_allocated_bytes": 258316800
+          }
+        ],
+        "graph": [
+          {
+            "runtime_peak_allocated_bytes": 2754017792,
+            "runtime_peak_reserved_bytes": 3686793216,
+            "runtime_end_allocated_bytes": 295246336
+          }
+        ]
+      }
+    },
+    {
+      "case": "double_stretch_sloth",
+      "batch_size": 1,
+      "original_frame_ms": 6.881438836925908,
+      "graph_frame_ms": 6.431122604169344,
+      "frame_latency_reduction_percent": 6.543925528192741,
+      "throughput_increase_percent": 7.00214038004221,
+      "original_instances_per_second": 145.31844628684112,
+      "graph_instances_per_second": 155.493847893942,
+      "timing_runs": {
+        "original": [
+          {
+            "average_total_frame_time_ms": 6.979390003806666,
+            "average_full_motion_interpolation_ms": 2.723741284123174,
+            "frames_used_for_stats": 190
+          },
+          {
+            "average_total_frame_time_ms": 6.783487670045151,
+            "average_full_motion_interpolation_ms": 2.7718653981647794,
+            "frames_used_for_stats": 190
+          }
+        ],
+        "graph": [
+          {
+            "average_total_frame_time_ms": 6.4174524633507986,
+            "average_full_motion_interpolation_ms": 2.419366101108531,
+            "frames_used_for_stats": 190
+          },
+          {
+            "average_total_frame_time_ms": 6.44479274498789,
+            "average_full_motion_interpolation_ms": 2.4405634630294073,
+            "frames_used_for_stats": 190
+          }
+        ]
+      },
+      "memory_samples": {
+        "original": [
+          {
+            "runtime_peak_allocated_bytes": 219862016,
+            "runtime_peak_reserved_bytes": 228589568,
+            "runtime_end_allocated_bytes": 148085760
+          },
+          {
+            "runtime_peak_allocated_bytes": 219862016,
+            "runtime_peak_reserved_bytes": 228589568,
+            "runtime_end_allocated_bytes": 148085760
+          }
+        ],
+        "graph": [
+          {
+            "runtime_peak_allocated_bytes": 251564032,
+            "runtime_peak_reserved_bytes": 289406976,
+            "runtime_end_allocated_bytes": 181790720
+          },
+          {
+            "runtime_peak_allocated_bytes": 251564032,
+            "runtime_peak_reserved_bytes": 289406976,
+            "runtime_end_allocated_bytes": 181790720
+          }
+        ]
+      }
+    },
+    {
+      "case": "double_stretch_sloth",
+      "batch_size": 128,
+      "original_frame_ms": 41.43173859244899,
+      "graph_frame_ms": 41.39092759584126,
+      "frame_latency_reduction_percent": 0.09850177181597367,
+      "throughput_increase_percent": 0.09859889347303419,
+      "original_instances_per_second": 3089.418990091047,
+      "graph_instances_per_second": 3092.4651230300224,
+      "timing_runs": {
+        "original": [
+          {
+            "average_total_frame_time_ms": 41.10711023431075,
+            "average_full_motion_interpolation_ms": 8.166448620892075,
+            "frames_used_for_stats": 190
+          },
+          {
+            "average_total_frame_time_ms": 41.75636695058722,
+            "average_full_motion_interpolation_ms": 8.274248763997717,
+            "frames_used_for_stats": 190
+          }
+        ],
+        "graph": [
+          {
+            "average_total_frame_time_ms": 41.288247038188736,
+            "average_full_motion_interpolation_ms": 8.154201757340203,
+            "frames_used_for_stats": 190
+          },
+          {
+            "average_total_frame_time_ms": 41.49360815349379,
+            "average_full_motion_interpolation_ms": 8.144304394091247,
+            "frames_used_for_stats": 190
+          }
+        ]
+      },
+      "memory_samples": {
+        "original": [
+          {
+            "runtime_peak_allocated_bytes": 4372075520,
+            "runtime_peak_reserved_bytes": 7010779136,
+            "runtime_end_allocated_bytes": 690198528
+          },
+          {
+            "runtime_peak_allocated_bytes": 4372075520,
+            "runtime_peak_reserved_bytes": 7010779136,
+            "runtime_end_allocated_bytes": 690198528
+          }
+        ],
+        "graph": [
+          {
+            "runtime_peak_allocated_bytes": 4424359936,
+            "runtime_peak_reserved_bytes": 6316621824,
+            "runtime_end_allocated_bytes": 742467072
+          },
+          {
+            "runtime_peak_allocated_bytes": 4424359936,
+            "runtime_peak_reserved_bytes": 6316621824,
+            "runtime_end_allocated_bytes": 742467072
+          }
+        ]
+      }
+    }
+  ],
+  "first_call_ms": [
+    {
+      "case": "single_lift_rope",
+      "batch": 1,
+      "original": 1038.0115450243466,
+      "graph": 10.851118946447968
+    },
+    {
+      "case": "single_lift_rope",
+      "batch": 4,
+      "original": 1947.3024040344171,
+      "graph": 11.311079026199877
+    },
+    {
+      "case": "single_lift_rope",
+      "batch": 16,
+      "original": 1142.941614962183,
+      "graph": 11.654354981146753
+    },
+    {
+      "case": "single_lift_rope",
+      "batch": 64,
+      "original": 1150.405565975234,
+      "graph": 16.120560991112143
+    },
+    {
+      "case": "single_lift_rope",
+      "batch": 128,
+      "original": 1133.0968100228347,
+      "graph": 23.385214968584478
+    },
+    {
+      "case": "single_lift_rope",
+      "batch": 512,
+      "original": 1154.1868400527164,
+      "graph": 71.37965399306267
+    },
+    {
+      "case": "double_stretch_sloth",
+      "batch": 1,
+      "original": 1022.6992839598097,
+      "graph": 10.426703025586903
+    },
+    {
+      "case": "double_stretch_sloth",
+      "batch": 4,
+      "original": 1261.6649600095116,
+      "graph": 11.996771034318954
+    },
+    {
+      "case": "double_stretch_sloth",
+      "batch": 16,
+      "original": 1336.7289049783722,
+      "graph": 15.952866000588983
+    },
+    {
+      "case": "double_stretch_sloth",
+      "batch": 64,
+      "original": 1334.2075330438092,
+      "graph": 34.11161195253953
+    },
+    {
+      "case": "double_stretch_sloth",
+      "batch": 128,
+      "original": 1343.0581309949048,
+      "graph": 62.617481977213174
+    },
+    {
+      "case": "double_stretch_sloth",
+      "batch": 512,
+      "original": 1401.21016203193,
+      "graph": 230.5951839662157
+    }
+  ],
+  "validation": {
+    "exact_geometry_and_cache_parity_all_12_configurations": true,
+    "pixel_identical_instance_images": 774,
+    "all_runtime_final_states_finite": true,
+    "batched_runtime_final_states_bit_identical": true,
+    "single_instance_replay_note": "B1 uses atomic spring-force accumulation: independent original runs already have different final-state hashes. Exact LBS and image parity is established separately with identical recorded physics inputs.",
+    "final_states": [
+      {
+        "case": "single_lift_rope",
+        "batch_size": 1,
+        "final_states": {
+          "original_r1": {
+            "positions": {
+              "shape": [
+                432,
+                3
+              ],
+              "sha256": "959e51d877b428b01aa86d22665bbbb6bf2ed2c631a1f568cdf2b4fae1b48078",
+              "finite": true
+            },
+            "velocities": {
+              "shape": [
+                432,
+                3
+              ],
+              "sha256": "569c1e4557c15a8154b4e7e02f209afd2ed67feeaf78c737dc5879dd7169cee0",
+              "finite": true
+            },
+            "gaussian_positions": {
+              "shape": [
+                38476,
+                3
+              ],
+              "sha256": "eb4a33dfbf1724a3053cfb56d0963031b0684ec5a738734551c6149d4520bd1f",
+              "finite": true
+            },
+            "gaussian_rotations": {
+              "shape": [
+                38476,
+                4
+              ],
+              "sha256": "d6294e8115150f444f7862abad7a0f8e1199743b51929ac0c97cef834be3d6f6",
+              "finite": true
+            }
+          },
+          "original_r2": {
+            "positions": {
+              "shape": [
+                432,
+                3
+              ],
+              "sha256": "7ce5112f7d6f0589848858e772b68995241fe4e19bb6794e04469be16fc609da",
+              "finite": true
+            },
+            "velocities": {
+              "shape": [
+                432,
+                3
+              ],
+              "sha256": "e956f312d14110e915aa49c2835ba1872a7df354335eb16a4a1814c9968afa0f",
+              "finite": true
+            },
+            "gaussian_positions": {
+              "shape": [
+                38476,
+                3
+              ],
+              "sha256": "a1b6f5c3ee170b47cc0f9254f30b63f0aea8ad61611dbf1d919312e514d09357",
+              "finite": true
+            },
+            "gaussian_rotations": {
+              "shape": [
+                38476,
+                4
+              ],
+              "sha256": "73dd0a63bca3b665df7981acf2bc0dabfe8a0ffb7898c4655eace4084caf1e79",
+              "finite": true
+            }
+          },
+          "graph_r1": {
+            "positions": {
+              "shape": [
+                432,
+                3
+              ],
+              "sha256": "b9224e2cc911de966f3dc6a7539423f2b66eec881122db417a303a144072f11e",
+              "finite": true
+            },
+            "velocities": {
+              "shape": [
+                432,
+                3
+              ],
+              "sha256": "d5def7769948c0a812a5bb2be2041ab1d0c126f9b287e375007c669a1bfa20ef",
+              "finite": true
+            },
+            "gaussian_positions": {
+              "shape": [
+                38476,
+                3
+              ],
+              "sha256": "579b5d6f5298c40f9ef8640dd507ab2dd16c44721c00ce913c311106a4874b5f",
+              "finite": true
+            },
+            "gaussian_rotations": {
+              "shape": [
+                38476,
+                4
+              ],
+              "sha256": "b31597b04f6e764fe7dbbef226feed8877a183c42cbe2f198fdfc64510adf67e",
+              "finite": true
+            }
+          },
+          "graph_r2": {
+            "positions": {
+              "shape": [
+                432,
+                3
+              ],
+              "sha256": "38020ef6ddd58e6cb326809f213055d03d7349a848045efc7edd114ada3f5ac1",
+              "finite": true
+            },
+            "velocities": {
+              "shape": [
+                432,
+                3
+              ],
+              "sha256": "a99fafc2f28f00aa9e577b135d40ede84519933a2fb2c21dbafa7202654a4987",
+              "finite": true
+            },
+            "gaussian_positions": {
+              "shape": [
+                38476,
+                3
+              ],
+              "sha256": "bcf48cee9bf9ca2361911da0a90c539e72b461ae56e429602dba75cc2603d7bf",
+              "finite": true
+            },
+            "gaussian_rotations": {
+              "shape": [
+                38476,
+                4
+              ],
+              "sha256": "5c5b4082f75045ab80dee8f814c1883397bf27adc9c986e22f9b17410b09b670",
+              "finite": true
+            }
+          }
+        },
+        "all_four_runs_match": false,
+        "reference_repeats_match": false,
+        "force_accumulation": "atomic"
+      },
+      {
+        "case": "single_lift_rope",
+        "batch_size": 128,
+        "final_states": {
+          "original_r1": {
+            "positions": {
+              "shape": [
+                55296,
+                3
+              ],
+              "sha256": "417fa25eb5720800f43a9d86ecc7c38e3d19f1efd0836977641d87eeb9a97a73",
+              "finite": true
+            },
+            "velocities": {
+              "shape": [
+                55296,
+                3
+              ],
+              "sha256": "fa63bf1d6399c97a945a2561c0ae6e37a7b8f2ae0e93c1e052739fc0d6c100da",
+              "finite": true
+            },
+            "gaussian_positions": {
+              "shape": [
+                4924928,
+                3
+              ],
+              "sha256": "7d64c4df66a0108dd7fa2ca58e26f1266802274094a6e9a1e76a32085183b9e5",
+              "finite": true
+            },
+            "gaussian_rotations": {
+              "shape": [
+                4924928,
+                4
+              ],
+              "sha256": "437710d427b936fabf8b4463bb935343af1ae5b8d435b1d63e3e114ea2dab46b",
+              "finite": true
+            }
+          },
+          "original_r2": {
+            "positions": {
+              "shape": [
+                55296,
+                3
+              ],
+              "sha256": "417fa25eb5720800f43a9d86ecc7c38e3d19f1efd0836977641d87eeb9a97a73",
+              "finite": true
+            },
+            "velocities": {
+              "shape": [
+                55296,
+                3
+              ],
+              "sha256": "fa63bf1d6399c97a945a2561c0ae6e37a7b8f2ae0e93c1e052739fc0d6c100da",
+              "finite": true
+            },
+            "gaussian_positions": {
+              "shape": [
+                4924928,
+                3
+              ],
+              "sha256": "7d64c4df66a0108dd7fa2ca58e26f1266802274094a6e9a1e76a32085183b9e5",
+              "finite": true
+            },
+            "gaussian_rotations": {
+              "shape": [
+                4924928,
+                4
+              ],
+              "sha256": "437710d427b936fabf8b4463bb935343af1ae5b8d435b1d63e3e114ea2dab46b",
+              "finite": true
+            }
+          },
+          "graph_r1": {
+            "positions": {
+              "shape": [
+                55296,
+                3
+              ],
+              "sha256": "417fa25eb5720800f43a9d86ecc7c38e3d19f1efd0836977641d87eeb9a97a73",
+              "finite": true
+            },
+            "velocities": {
+              "shape": [
+                55296,
+                3
+              ],
+              "sha256": "fa63bf1d6399c97a945a2561c0ae6e37a7b8f2ae0e93c1e052739fc0d6c100da",
+              "finite": true
+            },
+            "gaussian_positions": {
+              "shape": [
+                4924928,
+                3
+              ],
+              "sha256": "7d64c4df66a0108dd7fa2ca58e26f1266802274094a6e9a1e76a32085183b9e5",
+              "finite": true
+            },
+            "gaussian_rotations": {
+              "shape": [
+                4924928,
+                4
+              ],
+              "sha256": "437710d427b936fabf8b4463bb935343af1ae5b8d435b1d63e3e114ea2dab46b",
+              "finite": true
+            }
+          },
+          "graph_r2": {
+            "positions": {
+              "shape": [
+                55296,
+                3
+              ],
+              "sha256": "417fa25eb5720800f43a9d86ecc7c38e3d19f1efd0836977641d87eeb9a97a73",
+              "finite": true
+            },
+            "velocities": {
+              "shape": [
+                55296,
+                3
+              ],
+              "sha256": "fa63bf1d6399c97a945a2561c0ae6e37a7b8f2ae0e93c1e052739fc0d6c100da",
+              "finite": true
+            },
+            "gaussian_positions": {
+              "shape": [
+                4924928,
+                3
+              ],
+              "sha256": "7d64c4df66a0108dd7fa2ca58e26f1266802274094a6e9a1e76a32085183b9e5",
+              "finite": true
+            },
+            "gaussian_rotations": {
+              "shape": [
+                4924928,
+                4
+              ],
+              "sha256": "437710d427b936fabf8b4463bb935343af1ae5b8d435b1d63e3e114ea2dab46b",
+              "finite": true
+            }
+          }
+        },
+        "all_four_runs_match": true,
+        "reference_repeats_match": true,
+        "force_accumulation": "gather"
+      },
+      {
+        "case": "double_stretch_sloth",
+        "batch_size": 1,
+        "final_states": {
+          "original_r1": {
+            "positions": {
+              "shape": [
+                2427,
+                3
+              ],
+              "sha256": "2c8e055be400236bac41f2fc73f8772772e5656db109b408fda3fa62141d62ac",
+              "finite": true
+            },
+            "velocities": {
+              "shape": [
+                2427,
+                3
+              ],
+              "sha256": "39959840125033664e5ada8eacd9a20b4ba2574e94503d88b45a3668f0a93582",
+              "finite": true
+            },
+            "gaussian_positions": {
+              "shape": [
+                102245,
+                3
+              ],
+              "sha256": "1fac03bb36e2b0627936e17323fe95509661f9a46fbbbbf8d879922d51a57a22",
+              "finite": true
+            },
+            "gaussian_rotations": {
+              "shape": [
+                102245,
+                4
+              ],
+              "sha256": "38e960c5af44f01579420fa170017a20f284e31f2ea1d9e14f7ceafbfc999f43",
+              "finite": true
+            }
+          },
+          "original_r2": {
+            "positions": {
+              "shape": [
+                2427,
+                3
+              ],
+              "sha256": "a0a8824bca9c3ad8c8315464632b9b8176f5cfc42364e601d0aa3d587e41c945",
+              "finite": true
+            },
+            "velocities": {
+              "shape": [
+                2427,
+                3
+              ],
+              "sha256": "c516f5b75db00c6383ceeb8f95099bc4c4fb86f42e4fda5b836eef8cd0e9e1c1",
+              "finite": true
+            },
+            "gaussian_positions": {
+              "shape": [
+                102245,
+                3
+              ],
+              "sha256": "3b609a294cc0b8c8cb498880bd801c4a5a4aa320d511185c173d03501228b330",
+              "finite": true
+            },
+            "gaussian_rotations": {
+              "shape": [
+                102245,
+                4
+              ],
+              "sha256": "1dd47ea55b3340e6f80b608448d298ff752e6183c2dec1566d22ca8b964d7395",
+              "finite": true
+            }
+          },
+          "graph_r1": {
+            "positions": {
+              "shape": [
+                2427,
+                3
+              ],
+              "sha256": "7a7137b42a28b13640ed871de00c2478f49de434de87588fe69bf6d5c079cd88",
+              "finite": true
+            },
+            "velocities": {
+              "shape": [
+                2427,
+                3
+              ],
+              "sha256": "80fd6a67f1416841d08e95d1f4c10641390de121a12eb00903ac75df93ea62c2",
+              "finite": true
+            },
+            "gaussian_positions": {
+              "shape": [
+                102245,
+                3
+              ],
+              "sha256": "4aba29485409fd0e72db745234bee544b8ac06bb6d922c219cb69b615a6cd836",
+              "finite": true
+            },
+            "gaussian_rotations": {
+              "shape": [
+                102245,
+                4
+              ],
+              "sha256": "c0e14196b5a932efa3b2ceb04eb5fa5e2a67fd64e0a0d34189cd0597aba50237",
+              "finite": true
+            }
+          },
+          "graph_r2": {
+            "positions": {
+              "shape": [
+                2427,
+                3
+              ],
+              "sha256": "1c33e2dee3ebd8f19cb8568138d1be091961166e51db74ca6de7f204653e97d4",
+              "finite": true
+            },
+            "velocities": {
+              "shape": [
+                2427,
+                3
+              ],
+              "sha256": "27cd82186e95a6881c68b075b099a1c48bae912437683d83236284dab1caa4b8",
+              "finite": true
+            },
+            "gaussian_positions": {
+              "shape": [
+                102245,
+                3
+              ],
+              "sha256": "ac0ce74c1069ba588550549be0491190270cc299a6806da16de2c08787e1f03f",
+              "finite": true
+            },
+            "gaussian_rotations": {
+              "shape": [
+                102245,
+                4
+              ],
+              "sha256": "519fe4a449d8152bca3d4f212ec8370868eabc50bb75c3058c02fbb42c087bb9",
+              "finite": true
+            }
+          }
+        },
+        "all_four_runs_match": false,
+        "reference_repeats_match": false,
+        "force_accumulation": "atomic"
+      },
+      {
+        "case": "double_stretch_sloth",
+        "batch_size": 128,
+        "final_states": {
+          "original_r1": {
+            "positions": {
+              "shape": [
+                310656,
+                3
+              ],
+              "sha256": "0a49c0a0603082f2b2ed3e2811b020afeae41c9445020f90a630b3af8a401666",
+              "finite": true
+            },
+            "velocities": {
+              "shape": [
+                310656,
+                3
+              ],
+              "sha256": "932e48511be5fb2401c3588002a63e89f54af6f453233209f935a9fb9444338f",
+              "finite": true
+            },
+            "gaussian_positions": {
+              "shape": [
+                13087360,
+                3
+              ],
+              "sha256": "e147b6e1458799a7ee489fed5159823befa74d9dc8ead908e88f0b4db8ad7e21",
+              "finite": true
+            },
+            "gaussian_rotations": {
+              "shape": [
+                13087360,
+                4
+              ],
+              "sha256": "9fac50da9d1717013cf44f2f7482c16c6f9732d2dfe1fac3bcdeaf4d2e132146",
+              "finite": true
+            }
+          },
+          "original_r2": {
+            "positions": {
+              "shape": [
+                310656,
+                3
+              ],
+              "sha256": "0a49c0a0603082f2b2ed3e2811b020afeae41c9445020f90a630b3af8a401666",
+              "finite": true
+            },
+            "velocities": {
+              "shape": [
+                310656,
+                3
+              ],
+              "sha256": "932e48511be5fb2401c3588002a63e89f54af6f453233209f935a9fb9444338f",
+              "finite": true
+            },
+            "gaussian_positions": {
+              "shape": [
+                13087360,
+                3
+              ],
+              "sha256": "e147b6e1458799a7ee489fed5159823befa74d9dc8ead908e88f0b4db8ad7e21",
+              "finite": true
+            },
+            "gaussian_rotations": {
+              "shape": [
+                13087360,
+                4
+              ],
+              "sha256": "9fac50da9d1717013cf44f2f7482c16c6f9732d2dfe1fac3bcdeaf4d2e132146",
+              "finite": true
+            }
+          },
+          "graph_r1": {
+            "positions": {
+              "shape": [
+                310656,
+                3
+              ],
+              "sha256": "0a49c0a0603082f2b2ed3e2811b020afeae41c9445020f90a630b3af8a401666",
+              "finite": true
+            },
+            "velocities": {
+              "shape": [
+                310656,
+                3
+              ],
+              "sha256": "932e48511be5fb2401c3588002a63e89f54af6f453233209f935a9fb9444338f",
+              "finite": true
+            },
+            "gaussian_positions": {
+              "shape": [
+                13087360,
+                3
+              ],
+              "sha256": "e147b6e1458799a7ee489fed5159823befa74d9dc8ead908e88f0b4db8ad7e21",
+              "finite": true
+            },
+            "gaussian_rotations": {
+              "shape": [
+                13087360,
+                4
+              ],
+              "sha256": "9fac50da9d1717013cf44f2f7482c16c6f9732d2dfe1fac3bcdeaf4d2e132146",
+              "finite": true
+            }
+          },
+          "graph_r2": {
+            "positions": {
+              "shape": [
+                310656,
+                3
+              ],
+              "sha256": "0a49c0a0603082f2b2ed3e2811b020afeae41c9445020f90a630b3af8a401666",
+              "finite": true
+            },
+            "velocities": {
+              "shape": [
+                310656,
+                3
+              ],
+              "sha256": "932e48511be5fb2401c3588002a63e89f54af6f453233209f935a9fb9444338f",
+              "finite": true
+            },
+            "gaussian_positions": {
+              "shape": [
+                13087360,
+                3
+              ],
+              "sha256": "e147b6e1458799a7ee489fed5159823befa74d9dc8ead908e88f0b4db8ad7e21",
+              "finite": true
+            },
+            "gaussian_rotations": {
+              "shape": [
+                13087360,
+                4
+              ],
+              "sha256": "9fac50da9d1717013cf44f2f7482c16c6f9732d2dfe1fac3bcdeaf4d2e132146",
+              "finite": true
+            }
+          }
+        },
+        "all_four_runs_match": true,
+        "reference_repeats_match": true,
+        "force_accumulation": "gather"
+      }
+    ]
+  },
+  "core_source_sha256": {
+    "gaussian_splatting/dynamic_utils_fp16_no_profiling_orin.py": "e0f92251744fb5cbd27c6de23e39f8dd3c0fd73d8bc7795495512c253b1d5003",
+    "gaussian_splatting/lbs_cuda_graph.py": "fb592bc2f92e839e011347beb81fa24af8758dcab2fb885bc67d3e34f3a637c2",
+    "qqtt/engine/trainer_warp.py": "0235fea70888f8fff11bc4f267c78bd5da8a70053bbdf02f56d2b73a145ee68d",
+    "qqtt/engine/trainer_warp_quality.py": "739a3ebf97c1348e0333fa431f8030fd91c5a46c7bd180856630f69ca6a65c9d"
+  },
+  "artifacts": "results/lbs_cuda_graph_validation",
+  "method": "LBS: first 50 rope / 64 sloth frames from real physics, discard 8 warmup frames, median of three per-replay mean latencies, alternate mode order. Full runtime: two complete episodes per mode with original benchmark warmup exclusion; arithmetic mean frame times. Original LBS function loaded directly from the baseline Git revision; shared quaternion helper is unchanged."
+}

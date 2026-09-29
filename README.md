@@ -110,6 +110,16 @@ See [solver behavior, build and validation notes](gaussian_splatting/CUSOLVER.md
 
 </details>
 
+### LBS CUDA graph replay
+
+CUDA FP32 LBS automatically uses cached CUDA graphs for batches up to 64 and
+ordinary CUDA kernel launches for larger batches. There is no runtime selector.
+The selective rotation update and its numerical thresholds are unchanged.
+Runtime rendering consumes borrowed graph outputs before the next replay; other
+callers retain independent outputs by default. See the
+[rope/sloth validation and timing report](reports/lbs_cuda_graph.md) for batch
+scaling, full-runtime results and reproduction commands.
+
 ## Required Assets
 
 Download each archive below and extract it at the repository root:

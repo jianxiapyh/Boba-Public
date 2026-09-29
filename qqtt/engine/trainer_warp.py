@@ -1545,6 +1545,7 @@ class InvPhyTrainerWarp:
                         current_pos, current_rot = lbs_with_rotation_reuse(
                             current_mass_nodes=x,
                             cache=runtime.rotation_cache,
+                            copy_outputs=False,
                         )
                         interp_time = interp_timer.stop()
                         runtime.gaussians._xyz = current_pos
@@ -2192,6 +2193,7 @@ class InvPhyTrainerWarp:
                         current_pos, current_rot = lbs_with_rotation_reuse(
                             current_mass_nodes=x,
                             cache=runtime.rotation_cache,
+                            copy_outputs=False,
                         )
                         interp_time = interp_timer.stop()
                         gaussians._xyz = current_pos
@@ -2639,6 +2641,7 @@ class InvPhyTrainerWarp:
                         current_pos, current_rot= lbs_with_rotation_reuse(
                             current_mass_nodes = x,
                             cache = rotation_cache,
+                            copy_outputs=False,
                         )
 
                         interp_time = interp_timer.stop() 

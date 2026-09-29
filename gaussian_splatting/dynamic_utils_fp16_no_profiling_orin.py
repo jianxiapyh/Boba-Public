@@ -881,16 +881,99 @@ def quat_mul_norm_fused(q, rest):
     inv = torch.rsqrt((quat * quat).sum(dim=-1, keepdim=True) + 1e-6)
     return quat * inv
 
-#pyh updated for batched version
 @torch.no_grad()
 def lbs_with_rotation_reuse(
-    current_mass_nodes: torch.Tensor,  # This now contains all mass nodes across all instances
-    cache: dict,                       # rotation_cache with all state
-    tau_F: float = 5e-5,                # threshod need to tested, 5e-5 seems a little bit bad for visualiazation 
+    current_mass_nodes: torch.Tensor,
+    cache: dict,
+    tau_F: float = 5e-5,
+    *,
+    copy_outputs: bool = True,
 ) -> tuple[torch.Tensor, torch.Tensor]:
-    """Linear Blend Skinning with rotation matrix caching and reuse."""
-    
-    # Unpack cache 
+    """LBS with unchanged selective rotation reuse and graphable fixed stages.
+
+    CUDA FP32 batches up to 64 replay preparation and deformation graphs.
+    Larger batches use ordinary CUDA kernel launches. The variable-size rotation
+    update below remains eager. Returned outputs own their storage by
+    default. Runtime callers may set copy_outputs=False to borrow read-only
+    outputs until the next LBS call on the same cache/stream. Consume borrowed
+    outputs on that stream before its next replay.
+    """
+    from .lbs_cuda_graph import get_lbs_graph
+
+    graph = get_lbs_graph(
+        current_mass_nodes, cache, tau_F, _lbs_prepare, _lbs_deform,
+    )
+    if graph is None:
+        motions, F, can_reuse_rotation = _lbs_prepare(current_mass_nodes, cache, tau_F)
+    else:
+        motions, F, can_reuse_rotation = graph.prepare(current_mass_nodes)
+    mass_nodes_per_instance = cache["mass_nodes_per_instance"]
+    number_of_instance = cache["number_of_instance"]
+    R_cache = cache["R_cache"]
+    F_prev = cache["F_prev"]
+    rotation_computed = cache["rotation_computed"]
+
+    # Find bones that need rotation recomputation
+    bones_to_recompute = (~can_reuse_rotation).nonzero(as_tuple=False).squeeze(1)
+
+    if bones_to_recompute.numel() > 0:
+        F_to_compute = F.index_select(0, bones_to_recompute)  # (m, 3, 3)
+
+        # Polar decomposition via eigenvalue decomposition
+        X = F_to_compute
+        G = X.transpose(-2, -1) @ X
+        G = 0.5 * (G + G.transpose(-2, -1))
+        eigenvalues, eigenvectors = eigh_3x3(G)
+
+        # Sort eigenvalues/vectors in descending order
+        sort_idx = torch.argsort(eigenvalues, dim=-1, descending=True)
+        eigenvalues = eigenvalues.gather(-1, sort_idx)
+        eigenvectors = eigenvectors.gather(-1, sort_idx.unsqueeze(-2).expand_as(eigenvectors))
+
+        # Fix sign ambiguity
+        max_component_idx = eigenvectors.abs().argmax(dim=-2, keepdim=True)
+        sign = torch.sign(eigenvectors.gather(-2, max_component_idx))
+        eigenvectors = eigenvectors * sign
+
+        # Compute rotation
+        singular_values = eigenvalues.clamp_min(1e-12).sqrt()
+        singular_values_inv = torch.diag_embed(1.0 / singular_values)
+        U = (X @ eigenvectors) @ singular_values_inv
+        Vh = eigenvectors.transpose(-2, -1)
+
+        # Ensure proper rotation (determinant = +1)
+        needs_reflection_fix = (torch.linalg.det(U) * torch.linalg.det(Vh)) < 0
+        if needs_reflection_fix.any():
+            U[needs_reflection_fix, :, 2] *= -1
+
+        R_computed = (U @ Vh).to(F.dtype)
+
+        # sign stabilize vs previous cached quat
+        Q_new_f32 = rotmat_to_quat_fast(R_computed).float()  # (m,4)
+        inst = bones_to_recompute // mass_nodes_per_instance
+        bone = bones_to_recompute % mass_nodes_per_instance
+        idx = (bone * number_of_instance + inst).to(torch.int64)
+
+        Q_flat16 = cache["Q_cache_bm"].reshape(mass_nodes_per_instance * number_of_instance, 4)
+        Q_old_f32 = Q_flat16.index_select(0, idx).float()
+        flip = (Q_new_f32 * Q_old_f32).sum(dim=-1, keepdim=True) < 0
+        Q_new_f32 = torch.where(flip, -Q_new_f32, Q_new_f32)
+        # write back
+        Q_flat16.index_copy_(0, idx, Q_new_f32.to(torch.float16))
+
+        # Update caches
+        R_cache.index_copy_(0, bones_to_recompute, R_computed.to(torch.float16))
+        F_prev.index_copy_(0, bones_to_recompute, F_to_compute)
+        rotation_computed.index_fill_(0, bones_to_recompute, True)
+
+    if graph is not None:
+        return graph.deform(copy_outputs=copy_outputs)
+    return _lbs_deform(motions, cache)
+
+
+def _lbs_prepare(current_mass_nodes, cache, tau_F):
+    """Fixed-size motions, deformation gradients and rotation-reuse mask."""
+    # Unpack cache
     mass_nodes_rest = cache["mass_nodes_rest"]
     gaussians_quat_rest = cache["gaussians_quat_rest"]
     relations = cache["relations"]
@@ -902,7 +985,7 @@ def lbs_with_rotation_reuse(
     R_cache = cache["R_cache"]
     F_prev = cache["F_prev"]
     rotation_computed = cache["rotation_computed"]
-    
+
     current_mass_nodes_by_instance = current_mass_nodes.reshape(number_of_instance, mass_nodes_per_instance, 3)
 
     mass_node_rest_template = mass_nodes_rest.view(1, mass_nodes_per_instance, 3)
@@ -914,19 +997,19 @@ def lbs_with_rotation_reuse(
     # Compute current vectors from each bone to its neighbors
     current_bone_to_neighbors = (
         rest_bone_to_neighbors_template + neighbor_motions - motions[:,:, None, :]
-    )  
+    )
 
 
     # --- Compute deformation gradient F ---
     F = torch.einsum("ibja,bjc->ibac", current_bone_to_neighbors, rest_bone_to_neighbors)
-    
+
     F = F.reshape(number_of_instance * mass_nodes_per_instance, 3, 3).contiguous()             # (I*Nb, 3, 3)
 
     if F.dtype != torch.float32:
         F = F.to(torch.float32)
 
     # Compute change in deformation gradient from previous frame
-    dF = torch.linalg.matrix_norm(F - F_prev, ord='fro', dim=(-2, -1))  
+    dF = torch.linalg.matrix_norm(F - F_prev, ord='fro', dim=(-2, -1))
 
     # For debugging
     # print(f"[telemetry] valid={int(valid.sum())}/{valid.numel()}  rotation_computed={int(rotation_computed.sum())}/{rotation_computed.numel()}")
@@ -936,78 +1019,43 @@ def lbs_with_rotation_reuse(
     # Reuse rotation if: valid cache AND rotation computed before AND change is small
     can_reuse_rotation = rotation_computed & (dF < tau_F)
 
-    # Find bones that need rotation recomputation
-    bones_to_recompute = (~can_reuse_rotation).nonzero(as_tuple=False).squeeze(1)
-    
-    if bones_to_recompute.numel() > 0:
-        F_to_compute = F.index_select(0, bones_to_recompute)  # (m, 3, 3)
+    return motions, F, can_reuse_rotation
 
-        # Polar decomposition via eigenvalue decomposition
-        X = F_to_compute
-        G = X.transpose(-2, -1) @ X
-        G = 0.5 * (G + G.transpose(-2, -1))
-        eigenvalues, eigenvectors = eigh_3x3(G)
-        
-        # Sort eigenvalues/vectors in descending order
-        sort_idx = torch.argsort(eigenvalues, dim=-1, descending=True)
-        eigenvalues = eigenvalues.gather(-1, sort_idx)
-        eigenvectors = eigenvectors.gather(-1, sort_idx.unsqueeze(-2).expand_as(eigenvectors))
-        
-        # Fix sign ambiguity
-        max_component_idx = eigenvectors.abs().argmax(dim=-2, keepdim=True)
-        sign = torch.sign(eigenvectors.gather(-2, max_component_idx))
-        eigenvectors = eigenvectors * sign
-        
-        # Compute rotation
-        singular_values = eigenvalues.clamp_min(1e-12).sqrt()
-        singular_values_inv = torch.diag_embed(1.0 / singular_values)
-        U = (X @ eigenvectors) @ singular_values_inv
-        Vh = eigenvectors.transpose(-2, -1)
-        
-        # Ensure proper rotation (determinant = +1)
-        needs_reflection_fix = (torch.linalg.det(U) * torch.linalg.det(Vh)) < 0
-        if needs_reflection_fix.any():
-            U[needs_reflection_fix, :, 2] *= -1
-            
-        R_computed = (U @ Vh).to(F.dtype)  
 
-        # sign stabilize vs previous cached quat
-        Q_new_f32 = rotmat_to_quat_fast(R_computed).float()  # (m,4)
-        inst = bones_to_recompute // mass_nodes_per_instance
-        bone = bones_to_recompute % mass_nodes_per_instance
-        idx = (bone * number_of_instance + inst).to(torch.int64)
+def _lbs_deform(motions, cache):
+    """Fixed-size Gaussian position and quaternion update from cached rotations."""
+    # Unpack cache
+    mass_nodes_rest = cache["mass_nodes_rest"]
+    gaussians_quat_rest = cache["gaussians_quat_rest"]
+    relations = cache["relations"]
+    weights_indices = cache["weights_indices"]
+    rest_bone_to_neighbors = cache["rest_bone_to_neighbors"]
+    mass_nodes_per_instance = cache["mass_nodes_per_instance"]
+    gaussians_per_instance = cache["gaussians_per_instance"]
+    number_of_instance = cache["number_of_instance"]
+    R_cache = cache["R_cache"]
+    F_prev = cache["F_prev"]
+    rotation_computed = cache["rotation_computed"]
 
-        Q_flat16 = cache["Q_cache_bm"].reshape(mass_nodes_per_instance * number_of_instance, 4)
-        Q_old_f32 = Q_flat16.index_select(0, idx).float()
-        flip = (Q_new_f32 * Q_old_f32).sum(dim=-1, keepdim=True) < 0        
-        Q_new_f32 = torch.where(flip, -Q_new_f32, Q_new_f32)
-        # write back
-        Q_flat16.index_copy_(0, idx, Q_new_f32.to(torch.float16))
-        
-        # Update caches 
-        R_cache.index_copy_(0, bones_to_recompute, R_computed.to(torch.float16))
-        F_prev.index_copy_(0, bones_to_recompute, F_to_compute)
-        rotation_computed.index_fill_(0, bones_to_recompute, True)
-        
     # --- Gather bone data for each Gaussian ---
     R_per_instance = R_cache.view(number_of_instance, mass_nodes_per_instance, 3, 3)
-    R_per_gaussian = R_per_instance[:, weights_indices]              
+    R_per_gaussian = R_per_instance[:, weights_indices]
 
     xyz_rot_sum = torch.einsum("inkab,nkb->nia", R_per_gaussian, cache["xyz_local_w"])  # (Ng,I,3)
 
     # We are keeping this in fp32 for accuracy
     cache["motions_bm_fp32"].copy_(motions.transpose(0, 1))  # (Nb,I,3)
-    
+
     M_mat = cache["motions_bm_fp32"].reshape(mass_nodes_per_instance, number_of_instance * 3)         # view
     M_out = torch.sparse.mm(cache["W_csr_f32"], M_mat)                      # (Ng, I*3)
     motion_sum = M_out.view(gaussians_per_instance, number_of_instance, 3)                      # view
-    
+
     xyz_def_nia = xyz_rot_sum + motion_sum + cache["bones_rest_blend"][:, None, :]     # (Ng,I,3)
     xyz_deformed = xyz_def_nia.permute(1, 0, 2).reshape(number_of_instance * gaussians_per_instance, 3)
 
     Q_mat = cache["Q_cache_bm"].reshape(mass_nodes_per_instance, number_of_instance * 4)   # view, no copy
     Q_out = torch.sparse.mm(cache["W_csr_f16"], Q_mat)                                     # (Ng, I*4)
-    q = Q_out.view(gaussians_per_instance, number_of_instance, 4) 
+    q = Q_out.view(gaussians_per_instance, number_of_instance, 4)
     rest = gaussians_quat_rest.view(gaussians_per_instance, 1, 4)
     quat_def_nic = quat_mul_norm_fused(q, rest)  # (Ng
     quat_deformed = quat_def_nic.permute(1, 0, 2).reshape(number_of_instance * gaussians_per_instance, 4)
